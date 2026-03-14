@@ -1,0 +1,155 @@
+.navbar {
+  background: var(--green-dark);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: 68px;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: white;
+  flex-shrink: 0;
+}
+
+.logo-icon {
+  font-size: 1.8rem;
+}
+
+.logo-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  line-height: 1.1;
+}
+
+.logo-sub {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.nav-link {
+  color: rgba(255,255,255,0.85);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  color: white;
+  background: rgba(255,255,255,0.12);
+}
+
+.admin-link {
+  color: var(--amber) !important;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-username {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+}
+
+.cart-btn {
+  position: relative;
+  font-size: 1.4rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.cart-btn:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--amber);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.4rem;
+  padding: 0.3rem;
+  margin-left: auto;
+}
+
+.mobile-menu {
+  background: #144d22;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-link {
+  color: rgba(255,255,255,0.9);
+  padding: 0.85rem 1.5rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  transition: background 0.15s;
+}
+
+.mobile-link:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.mobile-logout {
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  color: #fca5a5;
+}
+
+@media (max-width: 768px) {
+  .nav-links, .nav-actions {
+    display: none;
+  }
+  .hamburger {
+    display: block;
+  }
+}

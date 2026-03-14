@@ -1,0 +1,137 @@
+.detail-page {
+  padding: 2rem 1.5rem 4rem;
+  max-width: 1000px;
+}
+
+.breadcrumb {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin-bottom: 2rem;
+}
+
+.breadcrumb a {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.breadcrumb a:hover { text-decoration: underline; }
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.detail-image-box {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border-radius: var(--radius);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  min-height: 320px;
+  justify-content: center;
+  position: sticky;
+  top: 90px;
+}
+
+.detail-emoji {
+  font-size: 7rem;
+}
+
+.category-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.category-badge.merchandise { background: #fef3c7; color: #92400e; }
+.category-badge.tickets { background: #dbeafe; color: #1e40af; }
+
+.detail-info h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+
+.detail-price {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--green-dark);
+  margin-bottom: 1rem;
+}
+
+.detail-desc {
+  color: var(--gray-700);
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.ticket-info {
+  background: var(--green-pale);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.ticket-feature {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  padding: 0.3rem 0;
+}
+
+.qty-selector {
+  margin-bottom: 1rem;
+}
+
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: inline-flex;
+}
+
+.qty-controls button {
+  background: var(--gray-100);
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  transition: background 0.15s;
+}
+
+.qty-controls button:hover { background: var(--gray-200); }
+
+.qty-controls span {
+  padding: 0.5rem 1.5rem;
+  font-weight: 800;
+  font-size: 1rem;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.add-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.full-width { width: 100%; }
+
+@media (max-width: 700px) {
+  .detail-layout { grid-template-columns: 1fr; }
+  .detail-image-box { position: static; min-height: 200px; }
+  .detail-emoji { font-size: 5rem; }
+}
