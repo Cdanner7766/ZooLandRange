@@ -1,7 +1,7 @@
 """
 CCDC Blue Team Scoring Engine
-Runs on Kali (red-team network) and checks whether blue-team services
-are reachable from the outside.
+Runs on SCORESVR (red-team network, VLAN 99) and checks whether
+blue-team services on VLAN 10 are reachable from the outside.
 
 Usage:
     python3 app.py

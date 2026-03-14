@@ -110,7 +110,6 @@
             - PORT=5000
             # VULN: Weak hardcoded JWT secret
             - JWT_SECRET=wild-kingdom-zoo-secret-2024
-            - FRONTEND_URL=http://0.0.0.0
           volumes:
             - zoo_data:/app/data
           restart: unless-stopped
@@ -118,8 +117,6 @@
           build:
             context: ./frontend
             dockerfile: Dockerfile
-            args:
-              - REACT_APP_API_URL=http://{{ ansible_host }}:5000
           ports:
             # VULN: HTTP only - no TLS
             - "80:80"

@@ -148,7 +148,7 @@ def check_smtp(host, port):
             first_line = banner.splitlines()[0].strip()
 
             # Use the range mail domain so Postfix HELO validation passes
-            s.sendall(b"EHLO scoring.ludus.domain\r\n")
+            s.sendall(b"EHLO scoring.zooland.local\r\n")
             data = s.recv(2048)
             if not data:
                 return False, "SMTP: no EHLO response"
