@@ -15,6 +15,34 @@
   args:
     executable: powershell
 
+- name: "Set solid dark blue desktop background on MEERKAT"
+  ansible.windows.win_powershell:
+    script: |
+      reg load "HKU\DefaultUser" "C:\Users\Default\NTUSER.DAT" 2>$null
+
+      $profiles = @("HKU:\DefaultUser", "HKCU:")
+      foreach ($hive in $profiles) {
+        $desktopKey = "$hive\Control Panel\Desktop"
+        $colorsKey  = "$hive\Control Panel\Colors"
+
+        Set-ItemProperty -Path $desktopKey -Name "Wallpaper"      -Value "" -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $desktopKey -Name "WallpaperStyle" -Value "0" -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $desktopKey -Name "TileWallpaper"  -Value "0" -ErrorAction SilentlyContinue
+
+        if (-not (Test-Path $colorsKey)) { New-Item -Path $colorsKey -Force | Out-Null }
+        Set-ItemProperty -Path $colorsKey -Name "Background" -Value "0 0 128" -ErrorAction SilentlyContinue
+      }
+
+      reg unload "HKU\DefaultUser" 2>$null
+
+      Add-Type -TypeDefinition @"
+      using System.Runtime.InteropServices;
+      public class Wallpaper {
+        [DllImport("user32.dll")] public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+      }
+"@
+      [Wallpaper]::SystemParametersInfo(20, 0, "", 3) | Out-Null
+
 - name: "Install blue team tools via Chocolatey"
   chocolatey.chocolatey.win_chocolatey:
     name:

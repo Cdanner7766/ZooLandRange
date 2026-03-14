@@ -1,0 +1,110 @@
+.confirm-page { padding: 2rem 1.5rem 4rem; max-width: 1000px; margin: 0 auto; }
+
+.confirm-hero {
+  text-align: center;
+  padding: 3rem 1rem 2.5rem;
+}
+
+.confirm-check { font-size: 4rem; margin-bottom: 1rem; }
+
+.confirm-hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.confirm-hero p { color: var(--gray-700); font-size: 1rem; margin-bottom: 1.25rem; }
+
+.order-number-badge {
+  display: inline-block;
+  background: var(--green-pale);
+  color: var(--green-dark);
+  font-weight: 800;
+  padding: 0.5rem 1.5rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+}
+
+.confirm-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.confirm-details, .confirm-shipping { padding: 1.75rem; }
+
+.confirm-details h2, .confirm-shipping h2 {
+  font-size: 1.1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1.5px solid var(--gray-100);
+}
+
+.confirm-details h3 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 0.4rem 0;
+  color: var(--gray-700);
+}
+
+.confirm-divider { border-top: 1.5px solid var(--gray-100); margin: 1.25rem 0; }
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+}
+
+.order-item-name { flex: 1; color: var(--gray-700); }
+.order-item-qty { color: var(--gray-500); }
+.order-item-price { font-weight: 700; }
+
+.totals { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.92rem;
+  color: var(--gray-700);
+}
+
+.total-grand { font-size: 1.1rem; font-weight: 800; color: var(--gray-900); }
+
+.shipping-block { color: var(--gray-700); line-height: 1.8; font-size: 0.95rem; }
+.shipping-block strong { color: var(--gray-900); }
+
+.next-steps { display: flex; flex-direction: column; gap: 1rem; }
+
+.next-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.next-step > span { font-size: 1.4rem; flex-shrink: 0; }
+
+.next-step strong { display: block; font-size: 0.9rem; margin-bottom: 0.1rem; }
+
+.next-step p { color: var(--gray-500); }
+
+.confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 700px) {
+  .confirm-layout { grid-template-columns: 1fr; }
+}

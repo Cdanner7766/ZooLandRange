@@ -89,8 +89,8 @@
       ssn VARCHAR(11),
       salary DECIMAL(10,2)
     );
-    INSERT IGNORE INTO employees VALUES (1, 'John Smith', 'jsmith@ludus.domain', '123-45-6789', 85000.00);
-    INSERT IGNORE INTO employees VALUES (2, 'Jane Doe', 'jdoe@ludus.domain', '987-65-4321', 92000.00);
+    INSERT IGNORE INTO employees VALUES (1, 'John Smith', 'jsmith@zooland.local', '123-45-6789', 85000.00);
+    INSERT IGNORE INTO employees VALUES (2, 'Jane Doe', 'jdoe@zooland.local', '987-65-4321', 92000.00);
 
     FLUSH PRIVILEGES;
     EOSQL

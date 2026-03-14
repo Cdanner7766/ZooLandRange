@@ -1,4 +1,4 @@
-# CCDC Practice Range - Setup Instructions
+# ZooLandRange — Setup Instructions
 
 ## Prerequisites
 
@@ -17,8 +17,8 @@ ludus templates list
 ## Step 1: Clone this repository on your Ludus host
 
 ```bash
-git clone <repo-url> ~/Ludus-AD-Range-Configured
-cd ~/Ludus-AD-Range-Configured
+git clone <repo-url> ~/ZooLandRange
+cd ~/ZooLandRange
 ```
 
 ## Step 2: Add all Ansible roles to Ludus
@@ -69,16 +69,16 @@ ludus range deploy -t user-defined-roles --limit <VM_NAME> --only-roles <ROLE_NA
 
 | Role | VM | OS | Service | Ports |
 |------|----|----|---------|-------|
-| `ludus_ccdc_web_server` | WEB01 | Ubuntu 22.04 | Apache + PHP + Company Portal | 80, 443 |
-| `ludus_ccdc_db_server` | DB01 | Debian 12 | MariaDB/MySQL | 3306 |
-| `ludus_ccdc_file_server` | FILESVR | Windows Server 2022 | SMB Shares | 445 |
-| `ludus_ccdc_mail_server` | MAIL01 | Debian 12 | Postfix + Dovecot | 25, 110, 143 |
-| `ludus_ccdc_ftp_server` | FTP01 | Ubuntu 22.04 | vsftpd | 21 |
-| `ludus_ccdc_workstation` | PC01-W11 | Windows 11 | Blue team tools via Chocolatey (Wireshark, Burp Suite, Process Hacker, etc.) | — |
-| `ludus_ubuntu_desktop` | SCORE01 | Ubuntu 22.04 | XFCE4 desktop environment + LightDM | — |
-| `ludus_ccdc_scoring_engine` | SCORE01 | Ubuntu 22.04 | Flask scoring engine + SQLite + systemd | 8080 |
-| `ludus_ccdc_domain_users` | DC01-2022 | Windows Server 2022 | Creates Ludus Corp employee AD accounts + DNS A records + DNS vulns | 53 |
-| `ludus_ccdc_kali_setup` | kali-1/2/3 | Kali Linux | Installs `kali-linux-default` tool metapackage | — |
+| `ludus_ccdc_web_server` | PENGUIN | Ubuntu 22.04 | CrazyRhino store (Docker: React + Node.js) | 80, 5000 |
+| `ludus_ccdc_db_server` | HIPPO | Debian 12 | MariaDB/MySQL | 3306 |
+| `ludus_ccdc_file_server` | ZEBRA | Windows Server 2022 | SMB Shares | 445 |
+| `ludus_ccdc_mail_server` | FLAMINGO | Debian 12 | Postfix + Dovecot | 25, 110, 143 |
+| `ludus_ccdc_ftp_server` | OTTER | Ubuntu 22.04 | vsftpd | 21 |
+| `ludus_ccdc_workstation` | MEERKAT | Windows 11 | Blue team tools via Chocolatey (Wireshark, Burp Suite, Process Hacker, etc.) | — |
+| `ludus_ubuntu_desktop` | SCORESVR | Ubuntu 22.04 | XFCE4 desktop environment + LightDM | — |
+| `ludus_ccdc_scoring_engine` | SCORESVR | Ubuntu 22.04 | Flask scoring engine + SQLite + systemd | 8080 |
+| `ludus_ccdc_domain_users` | GIRAFFE | Windows Server 2022 | Creates ZooLand Inc. employee AD accounts + DNS A records + DNS vulns | 53 |
+| `ludus_ccdc_kali_setup` | JAGUAR | Kali Linux | Installs `kali-linux-default` tool metapackage | — |
 
 ## Updating a Role
 
@@ -89,7 +89,7 @@ ludus range deploy -t user-defined-roles --limit <VM_NAME> --only-roles <ROLE_NA
 ```bash
 # Re-add the changed role, then redeploy only that VM
 ludus ansible role add -d roles/ludus_ccdc_web_server
-ludus range deploy -t user-defined-roles --limit {{ range_id }}-WEB01 --only-roles ludus_ccdc_web_server
+ludus range deploy -t user-defined-roles --limit {{ range_id }}-PENGUIN --only-roles ludus_ccdc_web_server
 ```
 
 To re-add and redeploy **all** roles at once (e.g. after a fresh clone or after pulling multiple changes):
@@ -107,20 +107,28 @@ ludus ansible role add -d roles/ludus_ccdc_kali_setup
 ludus range deploy -t user-defined-roles
 ```
 
-## Web Server Role Variable
+## CrazyRhino Web Store
 
-The web server role has one configurable variable for the PHP ini path (defaults to PHP 8.3):
+The `ludus_ccdc_web_server` role deploys the CrazyRhino e-commerce store via Docker on PENGUIN.
+The CrazyRhino source files are bundled in `roles/ludus_ccdc_web_server/files/crazyrhino/`.
 
-```yaml
-role_vars:
-  ludus_ccdc_web_server_php_ini_path: /etc/php/8.3/apache2/conf.d/99-insecure.ini
+- Frontend (React): served on port **80** via nginx inside Docker
+- Backend (Node.js/Express): API on port **5000**
+- Store URL: `http://10.X.10.23/`
+- Admin panel: `http://10.X.10.23/admin` (login: `admin` / `admin123`)
+- Debug endpoint: `http://10.X.10.23:5000/api/debug` (no auth — intentional VULN)
+
+**Manage Docker containers on PENGUIN:**
+```bash
+cd /opt/crazyrhino
+docker compose ps
+docker compose logs -f
+docker compose restart
 ```
 
-If your Ubuntu template has a different PHP version, override this in the VM's `role_vars` in `range-config.yaml`.
+## Scoring Engine
 
-## Scoring Engine Role
-
-The `ludus_ccdc_scoring_engine` role deploys to SCORE01 and runs as a systemd service. Defaults (`roles/ludus_ccdc_scoring_engine/defaults/main.yml`):
+The `ludus_ccdc_scoring_engine` role deploys to SCORESVR and runs as a systemd service. Defaults (`roles/ludus_ccdc_scoring_engine/defaults/main.yml`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -128,9 +136,9 @@ The `ludus_ccdc_scoring_engine` role deploys to SCORE01 and runs as a systemd se
 | `scoring_engine_dir` | `/opt/scoring_engine` | Installation directory |
 | `scoring_engine_port` | `8080` | Dashboard listen port |
 
-**Dashboard:** `http://10.X.99.10:8080/`
+**Dashboard:** `http://10.X.99.17:8080/`
 
-**Manage the service on SCORE01:**
+**Manage the service on SCORESVR:**
 ```bash
 sudo systemctl status scoring_engine
 sudo systemctl restart scoring_engine
@@ -139,38 +147,38 @@ sudo journalctl -u scoring_engine -f
 
 **Checks performed every 30 seconds** (VLAN 10 services):
 
-| Service | Host | Port | Check Method | Points |
-|---------|------|------|--------------|-------:|
-| HTTP — Company Portal | WEB01 (.31) | 80 | HTTP GET + content validation | 100 |
-| LDAP — Active Directory | DC01 (.11) | 389 | LDAPv3 anonymous bind | 100 |
-| Kerberos — Active Directory | DC01 (.11) | 88 | TCP connect | 100 |
-| DNS — Resolution | DC01 (.11) | 53 | A record query for `web.ludus.domain` | 100 |
-| SMTP — Mail relay | MAIL01 (.61) | 25 | 220 banner + EHLO 250 validation | 75 |
-| MySQL — Database | DB01 (.41) | 3306 | MySQL handshake banner | 75 |
-| IMAP — Mail login (`jsmith`) | MAIL01 (.61) | 143 | IMAP LOGIN command | 50 |
-| POP3 — Mail | MAIL01 (.61) | 110 | `+OK` banner | 50 |
-| SMB — File Server | FILESVR (.51) | 445 | SMBv1/v2 negotiate | 50 |
-| FTP — Login (`mlopez`) | FTP01 (.81) | 21 | FTP authenticated login | 50 |
-| RDP — Workstation | PC01-W11 (.21) | 3389 | CredSSP/NLA login (NTLMv2) | 50 |
-| **Total max per round** | | | | **800** |
+| Service | VM | Host | Port | Check Method | Points |
+|---------|-----|------|------|--------------|-------:|
+| HTTP — CrazyRhino Store | PENGUIN | .23 | 80 | HTTP GET + content validation | 100 |
+| LDAP — Active Directory | GIRAFFE | .7 | 389 | LDAPv3 anonymous bind | 100 |
+| Kerberos — Active Directory | GIRAFFE | .7 | 88 | TCP connect | 100 |
+| DNS — Resolution | GIRAFFE | .7 | 53 | A record query for `web.zooland.local` | 100 |
+| SMTP — Mail relay | FLAMINGO | .38 | 25 | 220 banner + EHLO 250 validation | 75 |
+| MySQL — Database | HIPPO | .41 | 3306 | MySQL handshake banner | 75 |
+| IMAP — Mail login (`jsmith`) | FLAMINGO | .38 | 143 | IMAP LOGIN command | 50 |
+| POP3 — Mail | FLAMINGO | .38 | 110 | `+OK` banner | 50 |
+| SMB — File Server | ZEBRA | .15 | 445 | SMBv1/v2 negotiate | 50 |
+| FTP — Login (`mlopez`) | OTTER | .29 | 21 | FTP authenticated login | 50 |
+| RDP — Workstation | MEERKAT | .12 | 3389 | CredSSP/NLA login (NTLMv2) | 50 |
+| **Total max per round** | | | | | **800** |
 
 ## Step 5: Validate the Deployment
 
-After deployment completes, SSH into the Kali VM and run the validation script:
+After deployment completes, SSH into the Kali VM (JAGUAR) and run the validation script:
 
 ```bash
-# Copy the script to Kali (from the Ludus host)
-scp scripts/test_range.sh kali-1:~/
+# Copy the script to JAGUAR (from the Ludus host)
+scp scripts/test_range.sh jaguar:~/
 
-# SSH into Kali and run it
-ssh kali-1
+# SSH into JAGUAR and run it
+ssh jaguar
 chmod +x ~/test_range.sh
 ./test_range.sh
 ```
 
 The script auto-detects your range network and tests:
-- Network connectivity (ping) to all 8 VMs
-- Web server: HTTP 200, company portal login page, phpinfo, server headers
+- Network connectivity (ping) to all VMs
+- Web server: HTTP 200, CrazyRhino store content, API health endpoint
 - Database: Port 3306, weak credential login, sample data
 - File server: SMB ports, anonymous share listing, file read
 - Mail server: SMTP/IMAP/POP3 ports, open relay, banners

@@ -70,9 +70,9 @@ def check_http(host, port):
             if not body:
                 return False, "HTTP 200 but empty body"
             content = body.decode("utf-8", errors="replace").lower()
-            if "ludus corporation" not in content and "employee portal" not in content:
-                return False, f"HTTP 200 but company portal content missing ({len(body)} bytes)"
-            return True, f"HTTP 200 OK — portal loaded ({len(body)}+ bytes)"
+            if "crazyrhino" not in content and "zoo" not in content and "wild kingdom" not in content:
+                return False, f"HTTP 200 but store content missing ({len(body)} bytes)"
+            return True, f"HTTP 200 OK — store loaded ({len(body)}+ bytes)"
     except urllib.error.HTTPError as e:
         return False, f"HTTP {e.code}: {e.reason}"
     except urllib.error.URLError as e:

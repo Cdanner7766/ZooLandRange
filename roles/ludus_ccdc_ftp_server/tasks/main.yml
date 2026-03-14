@@ -110,12 +110,12 @@
 # Create realistic employee FTP accounts
 # mlopez is used by the scoring engine for FTP checks (default credential).
 # rthomas is an additional employee that makes the server look realistic.
-- name: "Create Ludus Corporation employee FTP accounts"
+- name: "Create ZooLand Inc. employee FTP accounts"
   ansible.builtin.shell: |
     useradd -m -s /bin/bash mlopez   2>/dev/null || true
     useradd -m -s /bin/bash rthomas  2>/dev/null || true
-    echo 'mlopez:Ludus2025!'  | chpasswd
-    echo 'rthomas:Ludus2025!' | chpasswd
+    echo 'mlopez:ZooLand2025!'  | chpasswd
+    echo 'rthomas:ZooLand2025!' | chpasswd
     mkdir -p /home/mlopez/files /home/rthomas/files
     chown -R mlopez:mlopez   /home/mlopez
     chown -R rthomas:rthomas /home/rthomas

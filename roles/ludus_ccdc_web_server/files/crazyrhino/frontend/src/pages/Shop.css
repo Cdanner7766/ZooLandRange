@@ -1,0 +1,61 @@
+.shop-container {
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+}
+
+.shop-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--gray-200);
+  border-radius: 999px;
+  background: white;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--gray-700);
+  transition: all 0.2s;
+}
+
+.tab-btn:hover, .tab-btn.active {
+  border-color: var(--green);
+  color: var(--green-dark);
+  background: var(--green-pale);
+}
+
+.tab-btn.active {
+  background: var(--green);
+  color: white;
+  border-color: var(--green);
+}
+
+.search-box {
+  flex: 1;
+  max-width: 300px;
+  margin-left: auto;
+}
+
+.search-input {
+  border-radius: 999px !important;
+}
+
+.result-count {
+  color: var(--gray-500);
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+
+.shop-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
