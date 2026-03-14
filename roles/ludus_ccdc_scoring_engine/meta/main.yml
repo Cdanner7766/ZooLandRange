@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: CCDC Range
-  description: CCDC Blue Team Scoring Engine — deploys a Flask-based service monitor to SCORE01
+  description: CCDC Blue Team Scoring Engine — deploys a Flask-based service monitor to SCORESVR
   license: MIT
   min_ansible_version: "2.10"
   platforms:
