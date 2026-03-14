@@ -1,0 +1,304 @@
+# yaml-language-server: $schema=https://docs.ludus.cloud/schemas/range-config.json
+#
+ludus:
+  # ============================================================
+  # DOMAIN CONTROLLER - Primary DC for ludus.domain
+  # Manages AD, DNS (domain-integrated), DHCP, Group Policy
+  # Credentials: Administrator / password (Ludus default)
+  # Domain employee accounts (all use password: Ludus2025!):
+  #   jsmith  - John Smith,    IT Support  (IMAP scoring account on MAIL01)
+  #   bwilson - Barbara Wilson, HR
+  #   mchen   - Michelle Chen,  Finance
+  #   mlopez  - Maria Lopez,    Logistics  (FTP scoring account on FTP01)
+  #   rthomas - Robert Thomas,  Warehouse
+  # DNS scored here (AD-integrated zone) - port 53
+  # DNS VULNS (applied via ludus_ccdc_domain_users role):
+  #   - Zone transfers allowed to any host (AXFR to anyone)
+  #   - Recursive queries allowed from any source (DNS amplification)
+  #   - No DNSSEC validation
+  #   - Verbose DNS logging disabled (no audit trail)
+  # ============================================================
+  - vm_name: "{{ range_id }}-ad-dc-win2022-server-x64"
+    hostname: "{{ range_id }}-DC01-2022"
+    template: win2022-server-x64-template
+    vlan: 10
+    ip_last_octet: 11
+    ram_gb: 8
+    cpus: 4
+    windows:
+      sysprep: false
+    domain:
+      fqdn: ludus.domain
+      role: primary-dc
+    roles:
+      - ludus_ccdc_domain_users
+
+  # ============================================================
+  # WINDOWS 11 WORKSTATION - Domain-joined end-user workstation
+  # Used for simulating user activity and lateral movement targets
+  # Credentials: ludus.domain\user / password (domain user)
+  # ============================================================
+  - vm_name: "{{ range_id }}-ad-win11-22h2-enterprise-x64-1"
+    hostname: "{{ range_id }}-PC01-W11"
+    template: win11-22h2-x64-enterprise-template
+    vlan: 10
+    ip_last_octet: 21
+    ram_gb: 8
+    cpus: 4
+    windows:
+      sysprep: true
+      install_additional_tools: false
+    domain:
+      fqdn: ludus.domain
+      role: member
+    roles:
+      - ludus_ccdc_workstation
+
+  # ============================================================
+  # WEB SERVER (Ubuntu) - Apache + PHP
+  # Repurposed from Ubuntu desktop VM
+  # Service: HTTP on port 80/443
+  # Credentials: admin/admin, webadmin/password
+  # VULNS:
+  #   - Firewall disabled (ufw inactive)
+  #   - Apache directory listing enabled (Indexes)
+  #   - World-writable document root (chmod 777)
+  #   - PHP display_errors On (verbose error messages)
+  #   - PHP expose_php On (server info leakage)
+  #   - ServerTokens Full (Apache version disclosure)
+  #   - Default Apache config comments show secure options disabled
+  #   - Running as root via apache config
+  #   - No package updates applied
+  # ============================================================
+  - vm_name: "{{ range_id }}-ubuntu-22-04-x64-server"
+    hostname: "{{ range_id }}-WEB01"
+    template: ubuntu-22.04-x64-server-template
+    vlan: 10
+    ip_last_octet: 31
+    ram_gb: 4
+    cpus: 2
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ccdc_web_server
+    role_vars:
+      ludus_ccdc_web_server_php_ini_path: /etc/php/8.1/apache2/conf.d/99-insecure.ini
+
+  # ============================================================
+  # DATABASE SERVER (Debian 12) - MySQL
+  # Repurposed from Debian server VM
+  # Service: MySQL on port 3306
+  # Credentials: root/password, admin/admin, dbuser/dbuser
+  # VULNS:
+  #   - MySQL root password is "password"
+  #   - Remote root login allowed from any host (%)
+  #   - MySQL bound to 0.0.0.0 (accessible from all interfaces)
+  #   - Firewall disabled
+  #   - No package updates applied
+  #   - Test database accessible to all users
+  #   - Weak user accounts with full privileges
+  #   - Default config comments show secure options disabled
+  # ============================================================
+  - vm_name: "{{ range_id }}-debian-12-x64-server"
+    hostname: "{{ range_id }}-DB01"
+    template: debian-12-x64-server-template
+    vlan: 10
+    ip_last_octet: 41
+    ram_gb: 4
+    cpus: 2
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ccdc_db_server
+
+  # ============================================================
+  # FILE SERVER (Windows Server 2022) - SMB Shares
+  # Domain-joined to ludus.domain
+  # Service: SMB on port 445
+  # Shares: \\FILESVR\Public, \\FILESVR\Shared
+  # Credentials: Administrator / password, ludus.domain accounts
+  # VULNS:
+  #   - Everyone has Full Control on all shares
+  #   - No share passwords required
+  #   - SMBv1 enabled (EternalBlue-vulnerable protocol)
+  #   - Guest access enabled on shares
+  #   - No share-level permissions
+  #   - Firewall rules allow all SMB traffic
+  #   - Default config comments show secure options disabled
+  # ============================================================
+  - vm_name: "{{ range_id }}-win2022-filesvr"
+    hostname: "{{ range_id }}-FILESVR"
+    template: win2022-server-x64-template
+    vlan: 10
+    ip_last_octet: 51
+    ram_gb: 4
+    cpus: 2
+    windows:
+      sysprep: true
+    domain:
+      fqdn: ludus.domain
+      role: member
+    roles:
+      - ludus_ccdc_file_server
+
+  # ============================================================
+  # MAIL SERVER (Debian 12) - Postfix + Dovecot
+  # Service: SMTP (25), POP3 (110), IMAP (143)
+  # Credentials: mail/mail, admin/admin, root/toor
+  # VULNS:
+  #   - Open relay (accepts and relays mail from any domain)
+  #   - No SMTP authentication required for relay
+  #   - Plaintext protocols only (no TLS/SSL)
+  #   - Weak local user passwords
+  #   - Firewall disabled
+  #   - Dovecot allows plaintext auth without TLS
+  #   - No SPF/DKIM/DMARC
+  #   - No package updates applied
+  # ============================================================
+  - vm_name: "{{ range_id }}-debian-12-mailsvr"
+    hostname: "{{ range_id }}-MAIL01"
+    template: debian-12-x64-server-template
+    vlan: 10
+    ip_last_octet: 61
+    ram_gb: 4
+    cpus: 2
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ccdc_mail_server
+
+  # ============================================================
+  # FTP SERVER (Ubuntu 22.04) - vsftpd
+  # Service: FTP on port 21
+  # Credentials: ftpuser/ftpuser, admin/admin, root/toor
+  # VULNS:
+  #   - Anonymous access enabled with upload permissions
+  #   - Writable FTP root directory
+  #   - No TLS/SSL encryption (cleartext credentials)
+  #   - Weak local user accounts
+  #   - Firewall disabled
+  #   - FTP running with root privileges
+  #   - No chroot for local users (directory traversal)
+  #   - No package updates applied
+  # ============================================================
+  - vm_name: "{{ range_id }}-ubuntu-24-04-ftpsvr"
+    hostname: "{{ range_id }}-FTP01"
+    template: ubuntu-22.04-x64-server-template
+    vlan: 10
+    ip_last_octet: 81
+    ram_gb: 4
+    cpus: 2
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ccdc_ftp_server
+
+  # ============================================================
+  # KALI LINUX 1 - Primary attacker machine (Red Team)
+  # Used for penetration testing and CCDC red team simulation
+  # On VLAN 99 (separate attacker network)
+  # ============================================================
+  - vm_name: "{{ range_id }}-kali-1"
+    hostname: "{{ range_id }}-kali-1"
+    template: kali-x64-desktop-template
+    vlan: 99
+    ip_last_octet: 1
+    ram_gb: 8
+    cpus: 4
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ccdc_kali_setup
+
+  # ============================================================
+  # KALI LINUX 2 - Secondary attacker machine (Red Team)
+  # ============================================================
+  - vm_name: "{{ range_id }}-kali-2"
+    hostname: "{{ range_id }}-kali-2"
+    template: kali-x64-desktop-template
+    vlan: 99
+    ip_last_octet: 2
+    ram_gb: 8
+    cpus: 4
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ccdc_kali_setup
+
+  # ============================================================
+  # KALI LINUX 3 - Tertiary attacker machine (Red Team)
+  # ============================================================
+  - vm_name: "{{ range_id }}-kali-3"
+    hostname: "{{ range_id }}-kali-3"
+    template: kali-x64-desktop-template
+    vlan: 99
+    ip_last_octet: 3
+    ram_gb: 8
+    cpus: 4
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ccdc_kali_setup
+
+  # ============================================================
+  # SCORING ENGINE (Ubuntu 22.04) - Red Team subnet
+  # Hosts the CCDC Blue Team Scoring Engine
+  # XFCE desktop installed for GUI access
+  # Dashboard: http://<score01-ip>:8080
+  # ============================================================
+  - vm_name: "{{ range_id }}-ubuntu-score01"
+    hostname: "{{ range_id }}-SCORE01"
+    template: ubuntu-22.04-x64-server-template
+    vlan: 99
+    ip_last_octet: 10
+    ram_gb: 4
+    cpus: 2
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - ludus_ubuntu_desktop
+      - ludus_ccdc_scoring_engine
+
+network:
+  inter_vlan_default: REJECT
+  rules:
+    - name: Only allow windows to kali on 443
+      vlan_src: 10
+      vlan_dst: 99
+      protocol: tcp
+      ports: 443
+      action: ACCEPT
+    - name: Only allow windows to kali on 80
+      vlan_src: 10
+      vlan_dst: 99
+      protocol: tcp
+      ports: 80
+      action: ACCEPT
+    - name: Only allow windows to kali on 8080
+      vlan_src: 10
+      vlan_dst: 99
+      protocol: tcp
+      ports: 8080
+      action: ACCEPT
+    - name: Allow kali to all windows
+      vlan_src: 99
+      vlan_dst: 10
+      protocol: all
+      ports: all
+      action: ACCEPT

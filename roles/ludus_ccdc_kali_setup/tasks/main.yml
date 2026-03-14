@@ -1,0 +1,35 @@
+---
+# tasks file for ludus_ccdc_kali_setup
+# Installs the kali-linux-default metapackage on Kali attacker VMs.
+# kali-linux-default is a large download (~2-3 GB) — this task can take
+# 15-30 minutes depending on network speed and mirrors.
+
+# Force the official Kali CDN mirror so we aren't locked to a single
+# geographic mirror that may be temporarily unreachable.
+- name: Set Kali sources.list to official CDN mirror
+  ansible.builtin.copy:
+    content: |
+      deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware
+    dest: /etc/apt/sources.list
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+
+- name: Full upgrade all packages
+  ansible.builtin.apt:
+    upgrade: full
+  become: true
+
+- name: Install kali-linux-default tools
+  ansible.builtin.shell: |
+    DEBIAN_FRONTEND=noninteractive apt install kali-linux-default -y --fix-missing
+  args:
+    executable: /bin/bash
+  become: true
+  changed_when: true

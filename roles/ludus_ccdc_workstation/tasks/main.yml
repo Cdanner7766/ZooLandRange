@@ -1,0 +1,31 @@
+---
+# tasks file for ludus_ccdc_workstation
+# Installs blue team tools via Chocolatey on the Win11 workstation.
+# Replaces install_additional_tools: true to avoid the vscode Chocolatey
+# package, which consistently fails to download from update.code.visualstudio.com
+# in automated environments (Microsoft rate-limits/blocks the CDN endpoint).
+
+- name: "Bootstrap Chocolatey"
+  ansible.windows.win_shell: |
+    if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+      [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+      Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    }
+    $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH','User')
+  args:
+    executable: powershell
+
+- name: "Install blue team tools via Chocolatey"
+  chocolatey.chocolatey.win_chocolatey:
+    name:
+      - networkmonitor
+      - processhacker
+      - 7zip
+      - croc
+      - firefox
+      - burp-suite-free-edition
+      - ilspy
+      - explorersuite
+      - wireshark
+    state: present
+    timeout: 2700
