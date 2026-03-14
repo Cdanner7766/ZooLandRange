@@ -20,7 +20,7 @@
     script: |
       reg load "HKU\DefaultUser" "C:\Users\Default\NTUSER.DAT" 2>$null
 
-      $profiles = @("HKU:\DefaultUser", "HKCU:")
+      $profiles = @("Registry::HKEY_USERS\DefaultUser", "HKCU:")
       foreach ($hive in $profiles) {
         $desktopKey = "$hive\Control Panel\Desktop"
         $colorsKey  = "$hive\Control Panel\Colors"

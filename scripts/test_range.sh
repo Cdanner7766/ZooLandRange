@@ -46,14 +46,13 @@ else
 fi
 
 # --- VM IPs ---
-DC="${BASE}.11"
-PC01="${BASE}.21"
-WEB="${BASE}.31"
-DB="${BASE}.41"
-FILE="${BASE}.51"
-MAIL="${BASE}.61"
-DNS="${BASE}.71"
-FTP="${BASE}.81"
+DC="${BASE}.7"      # GIRAFFE  (AD DC + DNS)
+MEERKAT="${BASE}.12"  # MEERKAT  (Win11 workstation)
+WEB="${BASE}.23"    # PENGUIN  (web server)
+DB="${BASE}.41"     # HIPPO    (database)
+FILE="${BASE}.15"   # ZEBRA    (file server)
+MAIL="${BASE}.38"   # FLAMINGO (mail server)
+FTP="${BASE}.29"    # OTTER    (FTP server)
 
 echo -e "${BOLD}CCDC Range Validation${NC}"
 echo -e "Network base: ${CYAN}${BASE}.0/24${NC}"
@@ -69,17 +68,16 @@ check_port() {
 header "1. NETWORK CONNECTIVITY (Ping)"
 # =============================================================================
 declare -A HOSTS=(
-    ["DC (${DC})"]="$DC"
-    ["PC01 (${PC01})"]="$PC01"
+    ["GIRAFFE (${DC})"]="$DC"
+    ["MEERKAT (${MEERKAT})"]="$MEERKAT"
     ["PENGUIN (${WEB})"]="$WEB"
     ["HIPPO (${DB})"]="$DB"
     ["ZEBRA (${FILE})"]="$FILE"
     ["FLAMINGO (${MAIL})"]="$MAIL"
-    ["DNS01 (${DNS})"]="$DNS"
     ["OTTER (${FTP})"]="$FTP"
 )
 
-for name in "DC (${DC})" "PC01 (${PC01})" "PENGUIN (${WEB})" "HIPPO (${DB})" "ZEBRA (${FILE})" "FLAMINGO (${MAIL})" "DNS01 (${DNS})" "OTTER (${FTP})"; do
+for name in "GIRAFFE (${DC})" "MEERKAT (${MEERKAT})" "PENGUIN (${WEB})" "HIPPO (${DB})" "ZEBRA (${FILE})" "FLAMINGO (${MAIL})" "OTTER (${FTP})"; do
     ip="${HOSTS[$name]}"
     if ping -c 1 -W 3 "$ip" &>/dev/null; then
         pass "$name - reachable"
@@ -89,7 +87,7 @@ for name in "DC (${DC})" "PC01 (${PC01})" "PENGUIN (${WEB})" "HIPPO (${DB})" "ZE
 done
 
 # =============================================================================
-header "2. WEB SERVER (${WEB}) - Apache + PHP"
+header "2. WEB SERVER (${WEB}) - CrazyRhino (Docker: nginx + Node.js)"
 # =============================================================================
 
 # Port 80
@@ -99,61 +97,61 @@ else
     fail "Port 80/tcp closed"
 fi
 
-# HTTP response
+# HTTP response from React frontend
 HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 "http://${WEB}/" 2>/dev/null)
 if [ "$HTTP_CODE" = "200" ]; then
-    pass "HTTP 200 OK from index page"
+    pass "HTTP 200 OK from CrazyRhino frontend"
 else
     fail "HTTP response: ${HTTP_CODE:-timeout} (expected 200)"
 fi
 
-# Check index page content (company portal login)
-if curl -s --connect-timeout 5 "http://${WEB}/" 2>/dev/null | grep -qi "crazyrhino|zoo\|crazyrhino|zoo"; then
-    pass "Company portal login page served correctly"
+# React app content check
+if curl -s --connect-timeout 5 "http://${WEB}/" 2>/dev/null | grep -qi "wild kingdom\|crazyrhino\|zoo"; then
+    pass "CrazyRhino store content present in index page"
 else
-    fail "Company portal login page missing expected content"
+    fail "CrazyRhino store content missing from index page"
 fi
 
-# phpinfo page (vulnerability check)
-if curl -s --connect-timeout 5 "http://${WEB}/info.php" 2>/dev/null | grep -qi "phpinfo"; then
-    pass "info.php accessible (VULN: information disclosure)"
+# Backend API reachable via nginx proxy
+PRODUCTS_CODE=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 "http://${WEB}/api/products" 2>/dev/null)
+if [ "$PRODUCTS_CODE" = "200" ]; then
+    pass "API /api/products returns 200 (backend healthy)"
 else
-    fail "info.php not accessible"
+    fail "API /api/products: ${PRODUCTS_CODE:-timeout} (expected 200)"
 fi
 
-# Directory listing (vulnerability check)
-HEADERS=$(curl -sI --connect-timeout 5 "http://${WEB}/" 2>/dev/null)
-if echo "$HEADERS" | grep -qi "Apache"; then
-    pass "Server header exposes Apache version (VULN: ServerTokens Full)"
+# VULN: Unauthenticated debug endpoint exposes env vars (incl. JWT_SECRET)
+DEBUG_RESP=$(curl -s --connect-timeout 5 "http://${WEB}/api/debug" 2>/dev/null)
+if echo "$DEBUG_RESP" | grep -qi "JWT_SECRET\|env\|uptime"; then
+    pass "/api/debug accessible without auth (VULN: env var disclosure)"
 else
-    warn "Server header not detected"
+    warn "/api/debug not returning expected data — check backend logs"
 fi
 
-# --- Web Login Tests ---
-# DB employee login: index.php accepts any non-empty password when an email
-# row exists in ccdc_company.employees (SQL injection bypasses too).
-# The session redirect to home.php confirms authentication succeeded.
-COOKIES_DB=$(mktemp /tmp/ccdc_cookies_db_XXXX.txt)
-LOGIN_RESP=$(curl -s -c "$COOKIES_DB" \
-    -d "email=jsmith%40zooland.local&password=anypass" \
-    -L --connect-timeout 5 "http://${WEB}/index.php" 2>/dev/null)
-rm -f "$COOKIES_DB"
-if echo "$LOGIN_RESP" | grep -qi "Welcome back\|Intranet"; then
-    pass "Web login with DB employee (jsmith@zooland.local) redirected to home"
+# VULN: SQL injection in product search
+SQLI_RESP=$(curl -s --connect-timeout 5 "http://${WEB}/api/products?search=%27%20OR%20%271%27%3D%271" 2>/dev/null)
+if echo "$SQLI_RESP" | grep -qi "\[" && ! echo "$SQLI_RESP" | grep -qi "error\|syntax"; then
+    pass "Product search SQL injection returns data (VULN: raw string concatenation)"
 else
-    fail "Web login with DB employee failed (DB unreachable or employees table empty)"
+    warn "SQL injection test inconclusive — verify manually: /api/products?search=' OR '1'='1"
 fi
 
-# Backdoor login: hardcoded admin/admin in index.php — works without DB
-COOKIES_ADMIN=$(mktemp /tmp/ccdc_cookies_admin_XXXX.txt)
-LOGIN_RESP_ADMIN=$(curl -s -c "$COOKIES_ADMIN" \
-    -d "email=admin&password=admin" \
-    -L --connect-timeout 5 "http://${WEB}/index.php" 2>/dev/null)
-rm -f "$COOKIES_ADMIN"
-if echo "$LOGIN_RESP_ADMIN" | grep -qi "Welcome back\|Intranet"; then
-    pass "Web login with backdoor admin/admin (VULN: hardcoded credential)"
+# VULN: Weak admin login (admin/admin123)
+LOGIN_RESP=$(curl -s --connect-timeout 5 -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"username":"admin","password":"admin123"}' \
+    "http://${WEB}/api/auth/login" 2>/dev/null)
+if echo "$LOGIN_RESP" | grep -qi "token\|success\|admin"; then
+    pass "Admin login admin/admin123 accepted (VULN: weak hardcoded credential)"
 else
-    fail "Web login with backdoor admin/admin failed"
+    warn "Admin login test inconclusive — try manually: POST /api/auth/login {username:admin, password:admin123}"
+fi
+
+# Backend port 5000 exposed directly (should be internal only)
+if check_port "$WEB" 5000; then
+    pass "Port 5000/tcp open — backend exposed directly (VULN: no firewall)"
+else
+    info "Port 5000/tcp not reachable from Kali (may be filtered)"
 fi
 
 # =============================================================================
@@ -308,20 +306,20 @@ else
 fi
 
 # =============================================================================
-header "6. DNS SERVER (${DNS}) - Windows DNS"
+header "6. DNS SERVER (${DC}) - GIRAFFE (AD-integrated DNS)"
 # =============================================================================
 
-# Port 53
-if check_port "$DNS" 53; then
-    pass "Port 53/tcp open (DNS)"
+# Port 53 — DNS runs on the DC (GIRAFFE)
+if check_port "$DC" 53; then
+    pass "Port 53/tcp open (DNS on GIRAFFE)"
 else
-    fail "Port 53/tcp closed (DNS)"
+    fail "Port 53/tcp closed (DNS on GIRAFFE)"
 fi
 
 # DNS queries
 if command -v dig &>/dev/null; then
     # Query for web.zooland.local
-    DIG_RESULT=$(dig @"$DNS" web.zooland.local +short +time=5 2>/dev/null)
+    DIG_RESULT=$(dig @"$DC" web.zooland.local +short +time=5 2>/dev/null)
     if [ -n "$DIG_RESULT" ]; then
         pass "DNS resolves web.zooland.local -> ${DIG_RESULT}"
     else
@@ -329,7 +327,7 @@ if command -v dig &>/dev/null; then
     fi
 
     # Query for mail.zooland.local
-    DIG_RESULT=$(dig @"$DNS" mail.zooland.local +short +time=5 2>/dev/null)
+    DIG_RESULT=$(dig @"$DC" mail.zooland.local +short +time=5 2>/dev/null)
     if [ -n "$DIG_RESULT" ]; then
         pass "DNS resolves mail.zooland.local -> ${DIG_RESULT}"
     else
@@ -337,7 +335,7 @@ if command -v dig &>/dev/null; then
     fi
 
     # MX record
-    MX_RESULT=$(dig @"$DNS" zooland.local MX +short +time=5 2>/dev/null)
+    MX_RESULT=$(dig @"$DC" zooland.local MX +short +time=5 2>/dev/null)
     if [ -n "$MX_RESULT" ]; then
         pass "MX record: ${MX_RESULT}"
     else
@@ -345,7 +343,7 @@ if command -v dig &>/dev/null; then
     fi
 
     # Zone transfer (vulnerability check)
-    AXFR_RESULT=$(dig @"$DNS" zooland.local AXFR +time=5 2>/dev/null)
+    AXFR_RESULT=$(dig @"$DC" zooland.local AXFR +time=5 2>/dev/null)
     if echo "$AXFR_RESULT" | grep -q "web\|mail\|ftp"; then
         pass "Zone transfer (AXFR) allowed (VULN: full zone dump possible)"
     else
@@ -395,7 +393,7 @@ else
 fi
 
 # =============================================================================
-header "8. DOMAIN CONTROLLER (${DC})"
+header "8. DOMAIN CONTROLLER (${DC}) - GIRAFFE"
 # =============================================================================
 
 # Common DC ports
