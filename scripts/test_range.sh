@@ -33,7 +33,7 @@ if [ -n "$1" ]; then
     BASE="$1"
 else
     # Auto-detect: Kali is on VLAN 99, services are on VLAN 10
-    # Kali IP is 10.X.99.1, so services are at 10.X.10.*
+    # Kali IP is 10.X.99.34, so services are at 10.X.10.*
     KALI_IP=$(ip -4 addr show | grep -oP '10\.\d+\.99\.\d+' | head -1)
     if [ -z "$KALI_IP" ]; then
         echo -e "${RED}ERROR: Could not auto-detect Kali IP on VLAN 99.${NC}"
@@ -71,15 +71,15 @@ header "1. NETWORK CONNECTIVITY (Ping)"
 declare -A HOSTS=(
     ["DC (${DC})"]="$DC"
     ["PC01 (${PC01})"]="$PC01"
-    ["WEB01 (${WEB})"]="$WEB"
-    ["DB01 (${DB})"]="$DB"
-    ["FILESVR (${FILE})"]="$FILE"
-    ["MAIL01 (${MAIL})"]="$MAIL"
+    ["PENGUIN (${WEB})"]="$WEB"
+    ["HIPPO (${DB})"]="$DB"
+    ["ZEBRA (${FILE})"]="$FILE"
+    ["FLAMINGO (${MAIL})"]="$MAIL"
     ["DNS01 (${DNS})"]="$DNS"
-    ["FTP01 (${FTP})"]="$FTP"
+    ["OTTER (${FTP})"]="$FTP"
 )
 
-for name in "DC (${DC})" "PC01 (${PC01})" "WEB01 (${WEB})" "DB01 (${DB})" "FILESVR (${FILE})" "MAIL01 (${MAIL})" "DNS01 (${DNS})" "FTP01 (${FTP})"; do
+for name in "DC (${DC})" "PC01 (${PC01})" "PENGUIN (${WEB})" "HIPPO (${DB})" "ZEBRA (${FILE})" "FLAMINGO (${MAIL})" "DNS01 (${DNS})" "OTTER (${FTP})"; do
     ip="${HOSTS[$name]}"
     if ping -c 1 -W 3 "$ip" &>/dev/null; then
         pass "$name - reachable"
@@ -108,7 +108,7 @@ else
 fi
 
 # Check index page content (company portal login)
-if curl -s --connect-timeout 5 "http://${WEB}/" 2>/dev/null | grep -qi "Ludus Corporation\|Employee Portal"; then
+if curl -s --connect-timeout 5 "http://${WEB}/" 2>/dev/null | grep -qi "crazyrhino|zoo\|crazyrhino|zoo"; then
     pass "Company portal login page served correctly"
 else
     fail "Company portal login page missing expected content"
@@ -135,11 +135,11 @@ fi
 # The session redirect to home.php confirms authentication succeeded.
 COOKIES_DB=$(mktemp /tmp/ccdc_cookies_db_XXXX.txt)
 LOGIN_RESP=$(curl -s -c "$COOKIES_DB" \
-    -d "email=jsmith%40ludus.domain&password=anypass" \
+    -d "email=jsmith%40zooland.local&password=anypass" \
     -L --connect-timeout 5 "http://${WEB}/index.php" 2>/dev/null)
 rm -f "$COOKIES_DB"
 if echo "$LOGIN_RESP" | grep -qi "Welcome back\|Intranet"; then
-    pass "Web login with DB employee (jsmith@ludus.domain) redirected to home"
+    pass "Web login with DB employee (jsmith@zooland.local) redirected to home"
 else
     fail "Web login with DB employee failed (DB unreachable or employees table empty)"
 fi
@@ -320,32 +320,32 @@ fi
 
 # DNS queries
 if command -v dig &>/dev/null; then
-    # Query for web.ludus.domain
-    DIG_RESULT=$(dig @"$DNS" web.ludus.domain +short +time=5 2>/dev/null)
+    # Query for web.zooland.local
+    DIG_RESULT=$(dig @"$DNS" web.zooland.local +short +time=5 2>/dev/null)
     if [ -n "$DIG_RESULT" ]; then
-        pass "DNS resolves web.ludus.domain -> ${DIG_RESULT}"
+        pass "DNS resolves web.zooland.local -> ${DIG_RESULT}"
     else
-        fail "DNS did not resolve web.ludus.domain"
+        fail "DNS did not resolve web.zooland.local"
     fi
 
-    # Query for mail.ludus.domain
-    DIG_RESULT=$(dig @"$DNS" mail.ludus.domain +short +time=5 2>/dev/null)
+    # Query for mail.zooland.local
+    DIG_RESULT=$(dig @"$DNS" mail.zooland.local +short +time=5 2>/dev/null)
     if [ -n "$DIG_RESULT" ]; then
-        pass "DNS resolves mail.ludus.domain -> ${DIG_RESULT}"
+        pass "DNS resolves mail.zooland.local -> ${DIG_RESULT}"
     else
-        fail "DNS did not resolve mail.ludus.domain"
+        fail "DNS did not resolve mail.zooland.local"
     fi
 
     # MX record
-    MX_RESULT=$(dig @"$DNS" ludus.domain MX +short +time=5 2>/dev/null)
+    MX_RESULT=$(dig @"$DNS" zooland.local MX +short +time=5 2>/dev/null)
     if [ -n "$MX_RESULT" ]; then
         pass "MX record: ${MX_RESULT}"
     else
-        fail "No MX record for ludus.domain"
+        fail "No MX record for zooland.local"
     fi
 
     # Zone transfer (vulnerability check)
-    AXFR_RESULT=$(dig @"$DNS" ludus.domain AXFR +time=5 2>/dev/null)
+    AXFR_RESULT=$(dig @"$DNS" zooland.local AXFR +time=5 2>/dev/null)
     if echo "$AXFR_RESULT" | grep -q "web\|mail\|ftp"; then
         pass "Zone transfer (AXFR) allowed (VULN: full zone dump possible)"
     else

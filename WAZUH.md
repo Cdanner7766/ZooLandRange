@@ -12,7 +12,7 @@ This guide walks through deploying Wazuh as an intrusion detection system (IDS) 
 2. [Why the Server Must Run on Linux](#2-why-the-server-must-run-on-linux)
 3. [Choosing the Right VM for the Server](#3-choosing-the-right-vm-for-the-server)
 4. [Network and Port Reference](#4-network-and-port-reference)
-5. [Part 1 — Install the Wazuh Server (FTP01)](#part-1--install-the-wazuh-server-ftp01)
+5. [Part 1 — Install the Wazuh Server (OTTER)](#part-1--install-the-wazuh-server-ftp01)
 6. [Part 2 — Install Agents on Linux VMs](#part-2--install-agents-on-linux-vms)
 7. [Part 3 — Install Agents on Windows VMs](#part-3--install-agents-on-windows-vms)
 8. [Part 4 — Using the Wazuh Dashboard](#part-4--using-the-wazuh-dashboard)
@@ -37,19 +37,19 @@ On every machine you want to monitor, you install a **Wazuh Agent** — a small 
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    WAZUH SERVER (FTP01)             │
+│                    WAZUH SERVER (OTTER)             │
 │  ┌──────────┐  ┌───────────────┐  ┌─────────────┐  │
 │  │ Manager  │  │   Indexer     │  │  Dashboard  │  │
 │  │ :1514    │  │   :9200       │  │  :443 HTTPS │  │
 │  └────┬─────┘  └───────────────┘  └─────────────┘  │
 └───────┼─────────────────────────────────────────────┘
         │  agents report in over port 1514
-        ├── WEB01    (Linux agent)
-        ├── DB01     (Linux agent)
-        ├── MAIL01   (Linux agent)
-        ├── DC01     (Windows agent)
-        ├── PC01-W11 (Windows agent)
-        └── FILESVR  (Windows agent)
+        ├── PENGUIN    (Linux agent)
+        ├── HIPPO     (Linux agent)
+        ├── FLAMINGO   (Linux agent)
+        ├── GIRAFFE     (Windows agent)
+        ├── MEERKAT (Windows agent)
+        └── ZEBRA  (Windows agent)
 ```
 
 ---
@@ -72,24 +72,24 @@ When picking a server VM, consider three things:
 
 **1. Available RAM** — The Wazuh server (all three components together) needs at least **4 GB of RAM**. If a machine is already using most of its RAM for other services, Wazuh will compete for memory and slow everything down.
 
-**2. Existing services** — Avoid making the server a machine that is under heavy load. Running Wazuh on DB01 (which runs MariaDB) or WEB01 (which runs Apache) means both services fight for the same 4 GB of RAM.
+**2. Existing services** — Avoid making the server a machine that is under heavy load. Running Wazuh on HIPPO (which runs MariaDB) or PENGUIN (which runs Apache) means both services fight for the same 4 GB of RAM.
 
-**3. Is it Linux?** — As explained above, the server must be Linux. That rules out DC01 (Windows), PC01-W11 (Windows), and FILESVR (Windows).
+**3. Is it Linux?** — As explained above, the server must be Linux. That rules out GIRAFFE (Windows), MEERKAT (Windows), and ZEBRA (Windows).
 
 Here is how the Linux VMs in this range compare:
 
 | VM | RAM | Main Service | RAM used by service | Server candidate? |
 |----|-----|--------------|---------------------|:-----------------:|
-| WEB01 | 4 GB | Apache + PHP | ~300 MB | Marginal |
-| DB01 | 4 GB | MariaDB | ~400–600 MB | Marginal |
-| MAIL01 | 4 GB | Postfix + Dovecot | ~200 MB | Marginal |
-| **FTP01** | **4 GB** | **vsftpd** | **~10–30 MB** | **Best choice** |
+| PENGUIN | 4 GB | Apache + PHP | ~300 MB | Marginal |
+| HIPPO | 4 GB | MariaDB | ~400–600 MB | Marginal |
+| FLAMINGO | 4 GB | Postfix + Dovecot | ~200 MB | Marginal |
+| **OTTER** | **4 GB** | **vsftpd** | **~10–30 MB** | **Best choice** |
 
-**FTP01 is the recommended server for this range.** vsftpd is extremely lightweight — it uses almost no RAM at idle. This gives Wazuh the most headroom to work with on a 4 GB machine.
+**OTTER is the recommended server for this range.** vsftpd is extremely lightweight — it uses almost no RAM at idle. This gives Wazuh the most headroom to work with on a 4 GB machine.
 
-> **Keep in mind:** Even on FTP01, the machine will be running close to its limit. If you see slowness, that is normal. In a real deployment you would give the Wazuh server 8–16 GB of RAM. For this practice range, 4 GB works but will feel tight.
+> **Keep in mind:** Even on OTTER, the machine will be running close to its limit. If you see slowness, that is normal. In a real deployment you would give the Wazuh server 8–16 GB of RAM. For this practice range, 4 GB works but will feel tight.
 
-> **Scoring note:** FTP01 hosts the FTP service that the scoring engine checks. Make sure vsftpd keeps running after you install Wazuh. The two services do not conflict — vsftpd will continue to run on port 21.
+> **Scoring note:** OTTER hosts the FTP service that the scoring engine checks. Make sure vsftpd keeps running after you install Wazuh. The two services do not conflict — vsftpd will continue to run on port 21.
 
 ---
 
@@ -107,18 +107,18 @@ All VLAN 10 machines can reach each other freely. Wazuh uses these ports interna
 
 Since the Windows Firewall is disabled on all Windows VMs and iptables is flushed on all Linux VMs in this range, **no firewall changes are needed**. All ports are open by default.
 
-Throughout this guide, replace `10.X.10.81` with FTP01's actual IP address (`10.2.10.81` if your range ID is 2, `10.3.10.81` if your range ID is 3, etc.).
+Throughout this guide, replace `10.X.10.29` with OTTER's actual IP address (`10.2.10.81` if your range ID is 2, `10.3.10.81` if your range ID is 3, etc.).
 
 ---
 
-## Part 1 — Install the Wazuh Server (FTP01)
+## Part 1 — Install the Wazuh Server (OTTER)
 
-### Step 1.1 — SSH into FTP01
+### Step 1.1 — SSH into OTTER
 
 From any machine that can reach VLAN 10 (your Kali VM, or directly via Ludus):
 
 ```bash
-ssh debian@10.X.10.81
+ssh debian@10.X.10.29
 # Password: debian
 ```
 
@@ -193,7 +193,7 @@ nodes:
       ip: "<dashboard-node-ip>"
 ```
 
-Replace **all three** `<...-ip>` placeholders with FTP01's IP address. For example, if your range ID is 2:
+Replace **all three** `<...-ip>` placeholders with OTTER's IP address. For example, if your range ID is 2:
 
 ```yaml
 nodes:
@@ -244,7 +244,7 @@ bash wazuh-install.sh --wazuh-dashboard dashboard
 > **Important:** At the end of Step E, the script will print something like:
 > ```
 > INFO: --- Summary ---
-> INFO: You can access the web interface https://10.X.10.81
+> INFO: You can access the web interface https://10.X.10.29
 >        User: admin
 >        Password: AbCdEfGh1234567
 > ```
@@ -272,10 +272,10 @@ Replace `<YOUR-PASSWORD>` with the password the installer printed. You should se
 
 ### Step 1.8 — Access the Dashboard
 
-From any browser on the VLAN 10 network (e.g., from PC01-W11's Firefox, or from your Kali browser), navigate to:
+From any browser on the VLAN 10 network (e.g., from MEERKAT's Firefox, or from your Kali browser), navigate to:
 
 ```
-https://10.X.10.81
+https://10.X.10.29
 ```
 
 > **The browser will warn you about an untrusted certificate.** This is expected — Wazuh uses a self-signed certificate by default. Click **Advanced → Accept the Risk and Continue** (Firefox) or **Advanced → Proceed** (Chrome).
@@ -290,24 +290,24 @@ You should see the Wazuh dashboard. It will show 0 agents until you install agen
 
 ## Part 2 — Install Agents on Linux VMs
 
-Repeat these steps on each Linux VM: **WEB01**, **DB01**, and **MAIL01**.
+Repeat these steps on each Linux VM: **PENGUIN**, **HIPPO**, and **FLAMINGO**.
 
-> FTP01 (the server) can also monitor itself. To add a local agent on FTP01, follow these same steps on FTP01 after the server is installed.
+> OTTER (the server) can also monitor itself. To add a local agent on OTTER, follow these same steps on OTTER after the server is installed.
 
 ### Step 2.1 — SSH Into the Target VM
 
-Example for WEB01:
+Example for PENGUIN:
 ```bash
-ssh debian@10.X.10.31
+ssh debian@10.X.10.23
 # Password: debian
 sudo -i
 ```
 
 Use the correct IP for each VM:
-- WEB01: `10.X.10.31`
-- DB01: `10.X.10.41`
-- MAIL01: `10.X.10.61`
-- FTP01 (self-monitor): `10.X.10.81`
+- PENGUIN: `10.X.10.23`
+- HIPPO: `10.X.10.41`
+- FLAMINGO: `10.X.10.38`
+- OTTER (self-monitor): `10.X.10.29`
 
 ### Step 2.2 — Add the Wazuh Repository
 
@@ -321,17 +321,17 @@ apt update
 
 ### Step 2.3 — Install the Agent
 
-Set the manager IP (FTP01's IP) as an environment variable during install. Also give this agent a clear name so you can identify it in the dashboard. Replace `WEB01` and the IP with the correct values for each machine:
+Set the manager IP (OTTER's IP) as an environment variable during install. Also give this agent a clear name so you can identify it in the dashboard. Replace `PENGUIN` and the IP with the correct values for each machine:
 
 ```bash
-WAZUH_MANAGER="10.X.10.81" WAZUH_AGENT_NAME="WEB01" apt install wazuh-agent -y
+WAZUH_MANAGER="10.X.10.29" WAZUH_AGENT_NAME="PENGUIN" apt install wazuh-agent -y
 ```
 
 For each VM use the right name:
-- `WAZUH_AGENT_NAME="WEB01"` on WEB01
-- `WAZUH_AGENT_NAME="DB01"` on DB01
-- `WAZUH_AGENT_NAME="MAIL01"` on MAIL01
-- `WAZUH_AGENT_NAME="FTP01"` on FTP01
+- `WAZUH_AGENT_NAME="PENGUIN"` on PENGUIN
+- `WAZUH_AGENT_NAME="HIPPO"` on HIPPO
+- `WAZUH_AGENT_NAME="FLAMINGO"` on FLAMINGO
+- `WAZUH_AGENT_NAME="OTTER"` on OTTER
 
 ### Step 2.4 — Enable and Start the Agent
 
@@ -357,7 +357,7 @@ Log out and repeat Steps 2.1–2.5 on each remaining Linux VM.
 
 ## Part 3 — Install Agents on Windows VMs
 
-Repeat these steps on each Windows VM: **DC01**, **PC01-W11**, **FILESVR**, and **DNS01**.
+Repeat these steps on each Windows VM: **GIRAFFE**, **MEERKAT**, **ZEBRA**, and **GIRAFFE**.
 
 ### Step 3.1 — RDP or Console Into the Windows VM
 
@@ -383,19 +383,19 @@ This downloads the installer to `C:\wazuh-agent.msi`. It is about 25–40 MB.
 
 ### Step 3.4 — Install the Agent
 
-Run the installer silently from PowerShell. Replace `10.X.10.81` with FTP01's actual IP, and replace `DC01` with the correct hostname for each machine:
+Run the installer silently from PowerShell. Replace `10.X.10.29` with OTTER's actual IP, and replace `GIRAFFE` with the correct hostname for each machine:
 
 ```powershell
 msiexec.exe /i C:\wazuh-agent.msi /q `
-  WAZUH_MANAGER="10.X.10.81" `
-  WAZUH_AGENT_NAME="DC01" `
-  WAZUH_REGISTRATION_SERVER="10.X.10.81"
+  WAZUH_MANAGER="10.X.10.29" `
+  WAZUH_AGENT_NAME="GIRAFFE" `
+  WAZUH_REGISTRATION_SERVER="10.X.10.29"
 ```
 
 Use the correct name for each Windows VM:
-- `WAZUH_AGENT_NAME="DC01"` on DC01
-- `WAZUH_AGENT_NAME="PC01-W11"` on the workstation
-- `WAZUH_AGENT_NAME="FILESVR"` on the file server
+- `WAZUH_AGENT_NAME="GIRAFFE"` on GIRAFFE
+- `WAZUH_AGENT_NAME="MEERKAT"` on the workstation
+- `WAZUH_AGENT_NAME="ZEBRA"` on the file server
 
 Wait for the command to return (about 30–60 seconds). There is no progress bar — it runs silently.
 
@@ -421,13 +421,13 @@ The `Status` column should show `Running`.
 
 ### Step 3.7 — Repeat on Each Windows VM
 
-Connect to each remaining Windows VM (DC01, PC01-W11, FILESVR) and repeat Steps 3.1–3.6.
+Connect to each remaining Windows VM (GIRAFFE, MEERKAT, ZEBRA) and repeat Steps 3.1–3.6.
 
 ---
 
 ## Part 4 — Using the Wazuh Dashboard
 
-Open a browser and go to `https://10.X.10.81`. Log in with username `admin` and your generated password.
+Open a browser and go to `https://10.X.10.29`. Log in with username `admin` and your generated password.
 
 ### 4.1 — Overview / Home Page
 
@@ -513,7 +513,7 @@ Each check shows **Passed**, **Failed**, or **Not applicable**. Failed checks ar
 
 ### 4.7 — Setting Up Email Alerts (Optional)
 
-If you want Wazuh to send email alerts to MAIL01's open relay (which you can catch with Wireshark or webmail), edit `/var/ossec/etc/ossec.conf` on FTP01 (the manager):
+If you want Wazuh to send email alerts to FLAMINGO's open relay (which you can catch with Wireshark or webmail), edit `/var/ossec/etc/ossec.conf` on OTTER (the manager):
 
 ```bash
 nano /var/ossec/etc/ossec.conf
@@ -524,9 +524,9 @@ Find the `<global>` section and add:
 ```xml
 <global>
   <email_notification>yes</email_notification>
-  <email_to>blueteam@ludus.domain</email_to>
-  <smtp_server>10.X.10.61</smtp_server>
-  <email_from>wazuh@ftp01.ludus.domain</email_from>
+  <email_to>blueteam@zooland.local</email_to>
+  <smtp_server>10.X.10.38</smtp_server>
+  <email_from>wazuh@ftp01.zooland.local</email_from>
   <email_maxperhour>12</email_maxperhour>
   <email_alert_level>10</email_alert_level>
 </global>
@@ -534,7 +534,7 @@ Find the `<global>` section and add:
 
 Restart the manager: `systemctl restart wazuh-manager`
 
-Wazuh will now email you when a level-10+ alert fires. MAIL01's open relay will accept it without authentication.
+Wazuh will now email you when a level-10+ alert fires. FLAMINGO's open relay will accept it without authentication.
 
 ---
 
@@ -561,7 +561,7 @@ In a CCDC competition, the red team will be actively attacking your machines at 
 - `XSS attack attempt`
 - `PHP injection attempt`
 
-**What it means:** The red team is attacking the company portal on WEB01. Common attacks include SQLi on the login page and XSS in the employee search.
+**What it means:** The red team is attacking the company portal on PENGUIN. Common attacks include SQLi on the login page and XSS in the employee search.
 
 **What to do:** Review the alert to see the exact URL and payload. Alerts will include the raw HTTP request so you can see what query the attacker used.
 
@@ -593,7 +593,7 @@ In a CCDC competition, the red team will be actively attacking your machines at 
 - `NMAP - Port Scan`
 - `SMB exploit attempt`
 
-**What it means:** The red team is mapping your network or exploiting SMB (EternalBlue is possible on FILESVR which has SMBv1 enabled).
+**What it means:** The red team is mapping your network or exploiting SMB (EternalBlue is possible on ZEBRA which has SMBv1 enabled).
 
 ---
 
@@ -601,7 +601,7 @@ In a CCDC competition, the red team will be actively attacking your machines at 
 
 ### Dashboard won't load in browser
 
-1. Confirm the Wazuh Dashboard service is running on FTP01:
+1. Confirm the Wazuh Dashboard service is running on OTTER:
    ```bash
    systemctl status wazuh-dashboard
    ```
@@ -638,16 +638,16 @@ In a CCDC competition, the red team will be actively attacking your machines at 
    # Windows:
    Select-String -Path "C:\Program Files (x86)\ossec-agent\ossec.conf" -Pattern "<address>"
    ```
-   The `<address>` tag should contain FTP01's IP. If it is wrong, edit the file and restart the agent.
+   The `<address>` tag should contain OTTER's IP. If it is wrong, edit the file and restart the agent.
 
 4. Ping the manager from the agent to verify basic connectivity:
    ```bash
-   ping 10.X.10.81
+   ping 10.X.10.29
    ```
 
 ### Lost the admin password
 
-On FTP01 (as root), run:
+On OTTER (as root), run:
 
 ```bash
 /usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh -u admin -p "NewPassword123!"
@@ -697,7 +697,7 @@ Then retry the `msiexec.exe` install command.
 
 ## Quick Reference
 
-### Service Management (on FTP01 as root)
+### Service Management (on OTTER as root)
 
 ```bash
 # Check all Wazuh services
@@ -742,7 +742,7 @@ Get-Content "C:\Program Files (x86)\ossec-agent\ossec.log" -Tail 30
 ### Dashboard URL
 
 ```
-https://10.X.10.81
+https://10.X.10.29
 Username: admin
 Password: <printed during server installation — save it!>
 ```

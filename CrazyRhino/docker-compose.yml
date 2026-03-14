@@ -11,7 +11,6 @@ services:
       - NODE_ENV=production
       - PORT=5000
       - JWT_SECRET=change-me-in-production-please
-      - FRONTEND_URL=http://localhost:3000
     volumes:
       - zoo_data:/app/data
     restart: unless-stopped
@@ -20,10 +19,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - REACT_APP_API_URL=http://localhost:5000
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
     restart: unless-stopped

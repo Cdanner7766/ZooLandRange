@@ -1,17 +1,17 @@
 ---
-# Creates Ludus Corporation employee AD accounts on the domain controller.
-# These accounts mirror the local accounts provisioned on MAIL01 (jsmith,
-# bwilson, mchen) and FTP01 (mlopez, rthomas), giving the environment a
+# Creates ZooLand Inc. employee AD accounts on the domain controller.
+# These accounts mirror the local accounts provisioned on FLAMINGO (jsmith,
+# bwilson, mchen) and OTTER (mlopez, rthomas), giving the environment a
 # consistent set of employees across Linux services and the Windows domain.
 #
 # Scoring engine defaults:
-#   IMAP (MAIL01) - jsmith / Ludus2025!
-#   FTP  (FTP01)  - mlopez / Ludus2025!
+#   IMAP (FLAMINGO) - jsmith / ZooLand2025!
+#   FTP  (OTTER)    - mlopez / ZooLand2025!
 
-# DNS01 has been consolidated onto DC01.  DC01 already runs AD-integrated DNS
-# for ludus.domain (created automatically by Ludus during domain promotion).
-# We add service A records and apply intentional CCDC DNS vulnerabilities here.
-- name: "VULN - Add service DNS records and configure insecure DNS on DC01"
+# GIRAFFE runs AD-integrated DNS for zooland.local (created automatically
+# by Ludus during domain promotion). We add service A records and apply
+# intentional CCDC DNS vulnerabilities here.
+- name: "VULN - Add service DNS records and configure insecure DNS on GIRAFFE"
   ansible.windows.win_powershell:
     script: |
       # Derive the range network base from this DC's own IP
@@ -19,15 +19,15 @@
                Where-Object { $_.IPAddress -like "10.*" }).IPAddress
       $parts = $myIp.Split('.')
       $base  = "$($parts[0]).$($parts[1]).$($parts[2])"
-      $zone  = "ludus.domain"
+      $zone  = "zooland.local"
 
-      # Add A records for scored services (non-domain hosts won't self-register)
-      Add-DnsServerResourceRecordA -ZoneName $zone -Name "web"   -IPv4Address "$base.31" -ErrorAction SilentlyContinue
+      # Add A records for scored services
+      Add-DnsServerResourceRecordA -ZoneName $zone -Name "web"   -IPv4Address "$base.23" -ErrorAction SilentlyContinue
       Add-DnsServerResourceRecordA -ZoneName $zone -Name "db"    -IPv4Address "$base.41" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName $zone -Name "files" -IPv4Address "$base.51" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName $zone -Name "mail"  -IPv4Address "$base.61" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName $zone -Name "ftp"   -IPv4Address "$base.81" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordMX -ZoneName $zone -Name "." -MailExchange "mail.ludus.domain" -Preference 10 -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName $zone -Name "files" -IPv4Address "$base.15" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName $zone -Name "mail"  -IPv4Address "$base.38" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName $zone -Name "ftp"   -IPv4Address "$base.29" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordMX -ZoneName $zone -Name "." -MailExchange "mail.zooland.local" -Preference 10 -ErrorAction SilentlyContinue
 
       # VULN: Allow zone transfers to any host (AXFR to anyone)
       # Secure option (DISABLED): restrict SecureSecondaries to specific IPs only
@@ -41,10 +41,10 @@
       # Secure option (DISABLED): Set-DnsServerDiagnostics -All $true
       Set-DnsServerDiagnostics -All $false
 
-- name: "Create Ludus Corporation domain user accounts"
+- name: "Create ZooLand Inc. domain user accounts"
   ansible.windows.win_powershell:
     script: |
-      $domain = "ludus.domain"
+      $domain = "zooland.local"
       $users = @(
         @{ SamAccountName="jsmith";  GivenName="John";     Surname="Smith";   Description="IT Support"  },
         @{ SamAccountName="bwilson"; GivenName="Barbara";  Surname="Wilson";  Description="HR"          },
@@ -52,7 +52,7 @@
         @{ SamAccountName="mlopez";  GivenName="Maria";    Surname="Lopez";   Description="Logistics"   },
         @{ SamAccountName="rthomas"; GivenName="Robert";   Surname="Thomas";  Description="Warehouse"   }
       )
-      $password = ConvertTo-SecureString "Ludus2025!" -AsPlainText -Force
+      $password = ConvertTo-SecureString "ZooLand2025!" -AsPlainText -Force
       foreach ($u in $users) {
         $existing = Get-ADUser -Filter "SamAccountName -eq '$($u.SamAccountName)'" -ErrorAction SilentlyContinue
         if (-not $existing) {
@@ -72,3 +72,38 @@
           Write-Output "Already exists: $($u.SamAccountName)"
         }
       }
+
+# Set solid dark blue desktop background on the DC to prevent the default
+# Ludus wallpaper. Applies to the Default User hive (affects all new logons)
+# and to the currently loaded Administrator profile.
+- name: "Set solid dark blue desktop background on GIRAFFE (DC)"
+  ansible.windows.win_powershell:
+    script: |
+      # Load the Default User registry hive so the setting applies to all users
+      reg load "HKU\DefaultUser" "C:\Users\Default\NTUSER.DAT" 2>$null
+
+      $profiles = @("HKU:\DefaultUser", "HKCU:")
+      foreach ($hive in $profiles) {
+        $desktopKey = "$hive\Control Panel\Desktop"
+        $colorsKey  = "$hive\Control Panel\Colors"
+
+        # Remove any existing wallpaper
+        Set-ItemProperty -Path $desktopKey -Name "Wallpaper"      -Value "" -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $desktopKey -Name "WallpaperStyle" -Value "0" -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $desktopKey -Name "TileWallpaper"  -Value "0" -ErrorAction SilentlyContinue
+
+        # Set background color to solid dark blue (RGB 0 0 128)
+        if (-not (Test-Path $colorsKey)) { New-Item -Path $colorsKey -Force | Out-Null }
+        Set-ItemProperty -Path $colorsKey -Name "Background" -Value "0 0 128" -ErrorAction SilentlyContinue
+      }
+
+      reg unload "HKU\DefaultUser" 2>$null
+
+      # Apply via SystemParametersInfo so it takes effect immediately
+      Add-Type -TypeDefinition @"
+      using System.Runtime.InteropServices;
+      public class Wallpaper {
+        [DllImport("user32.dll")] public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+      }
+"@
+      [Wallpaper]::SystemParametersInfo(20, 0, "", 3) | Out-Null

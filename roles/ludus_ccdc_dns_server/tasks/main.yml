@@ -8,13 +8,13 @@
     script: |
       Install-WindowsFeature -Name DNS -IncludeManagementTools
 
-# Configure forward lookup zone for ludus.domain
+# Configure forward lookup zone for zooland.local
 - name: "Configure DNS forward lookup zone"
   ansible.windows.win_powershell:
     script: |
       # Add a standard primary zone (not AD-integrated, since this is a member server)
       try {
-          Add-DnsServerPrimaryZone -Name "ludus.domain" -ZoneFile "ludus.domain.dns" -ErrorAction SilentlyContinue
+          Add-DnsServerPrimaryZone -Name "zooland.local" -ZoneFile "zooland.local.dns" -ErrorAction SilentlyContinue
       } catch {
           Write-Output "Zone may already exist"
       }
@@ -23,12 +23,12 @@
       $parts = $myIp.Split('.')
       $base = "$($parts[0]).$($parts[1]).$($parts[2])"
       # Add sample DNS records for services using dynamically derived IPs
-      Add-DnsServerResourceRecordA -ZoneName "ludus.domain" -Name "web" -IPv4Address "$base.31" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "ludus.domain" -Name "db" -IPv4Address "$base.41" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "ludus.domain" -Name "files" -IPv4Address "$base.51" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "ludus.domain" -Name "mail" -IPv4Address "$base.61" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "ludus.domain" -Name "ftp" -IPv4Address "$base.81" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordMX -ZoneName "ludus.domain" -Name "." -MailExchange "mail.ludus.domain" -Preference 10 -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "web" -IPv4Address "$base.31" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "db" -IPv4Address "$base.41" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "files" -IPv4Address "$base.51" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "mail" -IPv4Address "$base.61" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "ftp" -IPv4Address "$base.81" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordMX -ZoneName "zooland.local" -Name "." -MailExchange "mail.zooland.local" -Preference 10 -ErrorAction SilentlyContinue
 
 # VULN: Allow zone transfers to any server
 - name: "VULN - Allow zone transfers to any host"
@@ -37,7 +37,7 @@
       # INSECURE: Allow AXFR to any host - attackers can dump full DNS zone
       # Secure option (DISABLED): Set-DnsServerZoneTransferPolicy to specific IPs
       # Secure option (DISABLED): SecureSecondaries = TransferToSecureServers
-      Set-DnsServerPrimaryZone -Name "ludus.domain" -SecureSecondaries TransferAnyServer -ErrorAction SilentlyContinue
+      Set-DnsServerPrimaryZone -Name "zooland.local" -SecureSecondaries TransferAnyServer -ErrorAction SilentlyContinue
       # Also allow for reverse zone if it exists
       Get-DnsServerZone | Where-Object { $_.IsReverseLookupZone } | ForEach-Object {
           Set-DnsServerPrimaryZone -Name $_.ZoneName -SecureSecondaries TransferAnyServer -ErrorAction SilentlyContinue

@@ -2,12 +2,12 @@
 # tasks file for ludus_ccdc_mail_server
 # Configures Postfix + Dovecot mail server with intentional CCDC vulnerabilities
 
-# Non-interactive Postfix install (internet site, ludus.domain)
+# Non-interactive Postfix install (internet site, zooland.local)
 - name: "Set Postfix preseed selections"
   ansible.builtin.shell: |
     debconf-set-selections <<EOF
     postfix postfix/main_mailer_type select Internet Site
-    postfix postfix/mailname string ludus.domain
+    postfix postfix/mailname string zooland.local
     EOF
   become: true
 
@@ -41,10 +41,10 @@
       biff = no
       append_dot_mydomain = no
 
-      myhostname = mail.ludus.domain
-      mydomain = ludus.domain
+      myhostname = mail.zooland.local
+      mydomain = zooland.local
       myorigin = $mydomain
-      mydestination = $myhostname, ludus.domain, localhost.localdomain, localhost
+      mydestination = $myhostname, zooland.local, localhost.localdomain, localhost
       mynetworks = 0.0.0.0/0
 
       # VULN: Accept mail from anyone (open relay)
@@ -135,9 +135,9 @@
     useradd -m -s /bin/bash jsmith  2>/dev/null || true
     useradd -m -s /bin/bash bwilson 2>/dev/null || true
     useradd -m -s /bin/bash mchen   2>/dev/null || true
-    echo 'jsmith:Ludus2025!'  | chpasswd
-    echo 'bwilson:Ludus2025!' | chpasswd
-    echo 'mchen:Ludus2025!'   | chpasswd
+    echo 'jsmith:ZooLand2025!'  | chpasswd
+    echo 'bwilson:ZooLand2025!' | chpasswd
+    echo 'mchen:ZooLand2025!'   | chpasswd
     mkdir -p /home/jsmith/Maildir/{new,cur,tmp}
     mkdir -p /home/bwilson/Maildir/{new,cur,tmp}
     mkdir -p /home/mchen/Maildir/{new,cur,tmp}
@@ -157,12 +157,12 @@
     iptables -P OUTPUT  ACCEPT || true
   become: true
 
-# smtpd resolves $myhostname (mail.ludus.domain) before sending the 220 banner.
+# smtpd resolves $myhostname (mail.zooland.local) before sending the 220 banner.
 # Adding it to /etc/hosts avoids a DNS round-trip to the DC on every connection.
-- name: "Add mail.ludus.domain to /etc/hosts"
+- name: "Add mail.zooland.local to /etc/hosts"
   ansible.builtin.lineinfile:
     path: /etc/hosts
-    line: "127.0.0.1 mail.ludus.domain"
+    line: "127.0.0.1 mail.zooland.local"
     state: present
   become: true
 

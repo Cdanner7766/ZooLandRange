@@ -1,37 +1,21 @@
 ---
 # tasks file for ludus_ccdc_web_server
-# Configures Apache + PHP web server with intentional CCDC vulnerabilities
+# Deploys the CrazyRhino e-commerce store via Docker on PENGUIN
+# Replaces the Apache/PHP stack with a Node.js + React application
+# containing intentional CCDC vulnerabilities for practice
 
-# Install XFCE desktop environment + LightDM so the server has a GUI
-- name: "Install XFCE desktop and LightDM"
+# Install prerequisites
+- name: "Install required packages"
   ansible.builtin.apt:
     name:
-      - xfce4
-      - xfce4-goodies
-      - lightdm
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - git
     state: present
     update_cache: true
-  become: true
-
-- name: "Set LightDM as default display manager"
-  ansible.builtin.shell: echo "/usr/sbin/lightdm" > /etc/X11/default-display-manager
-  become: true
-
-- name: "Enable LightDM service"
-  ansible.builtin.systemd:
-    name: lightdm
-    enabled: true
-  become: true
-
-# Install Apache and PHP packages (do NOT run apt upgrade - keep outdated packages)
-- name: "Install Apache and PHP"
-  ansible.builtin.apt:
-    name:
-      - apache2
-      - php
-      - libapache2-mod-php
-      - php-mysql
-    state: present
   become: true
 
 # VULN: Disable firewall entirely - no iptables/ufw protection
@@ -41,147 +25,133 @@
     ufw --force reset
   become: true
 
-# VULN: Enable directory listing so attackers can browse all files
-- name: "VULN - Enable Apache directory listing and verbose errors"
-  ansible.builtin.copy:
-    dest: /etc/apache2/conf-available/security.conf
-    content: |
-      # INSECURE CONFIG - Directory listing enabled, version disclosure on
-      # Secure option (DISABLED): ServerTokens Prod
-      ServerTokens Full
-      # Secure option (DISABLED): ServerSignature Off
-      ServerSignature On
-      # Secure option (DISABLED): TraceEnable Off
-      TraceEnable On
-    owner: root
-    group: root
-    mode: "0644"
+# Install Docker
+- name: "Add Docker GPG key"
+  ansible.builtin.shell: |
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  become: true
+  args:
+    creates: /usr/share/keyrings/docker-archive-keyring.gpg
+
+- name: "Add Docker repository"
+  ansible.builtin.shell: |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
   become: true
 
-# VULN: Overly permissive Apache vhost - allows directory indexing
-- name: "VULN - Configure insecure default vhost"
-  ansible.builtin.copy:
-    dest: /etc/apache2/sites-available/000-default.conf
-    content: |
-      # INSECURE VHOST - Directory listing, no access controls
-      # Secure option (DISABLED): Options -Indexes -FollowSymLinks
-      # Secure option (DISABLED): AllowOverride None
-      <VirtualHost *:80>
-          ServerAdmin admin@ludus.domain
-          DocumentRoot /var/www/html
-          DirectoryIndex index.php index.html
-          <Directory /var/www/html>
-              Options Indexes FollowSymLinks
-              AllowOverride All
-              Require all granted
-          </Directory>
-          ErrorLog ${APACHE_LOG_DIR}/error.log
-          CustomLog ${APACHE_LOG_DIR}/access.log combined
-      </VirtualHost>
-    owner: root
-    group: root
-    mode: "0644"
+- name: "Install Docker Engine and docker-compose-plugin"
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: true
   become: true
 
-# VULN: PHP configured to leak information and show errors
-- name: "VULN - Configure insecure PHP settings"
-  ansible.builtin.copy:
-    dest: "{{ ludus_ccdc_web_server_php_ini_path }}"
-    content: |
-      ; INSECURE PHP CONFIG
-      ; Secure option (DISABLED): display_errors = Off
-      display_errors = On
-      display_startup_errors = On
-      ; Secure option (DISABLED): expose_php = Off
-      expose_php = On
-      ; Secure option (DISABLED): allow_url_include = Off
-      allow_url_include = On
-      error_reporting = E_ALL
-    owner: root
-    group: root
-    mode: "0644"
+- name: "Enable and start Docker"
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
   become: true
 
-# Remove the default Apache index.html so index.php is served instead.
-# Apache's default DirectoryIndex prefers index.html over index.php;
-# removing it ensures the company portal login page is the entry point.
-- name: "Remove default Apache index.html"
+# Deploy CrazyRhino application files
+- name: "Create CrazyRhino application directory"
   ansible.builtin.file:
-    path: /var/www/html/index.html
-    state: absent
+    path: /opt/crazyrhino
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
   become: true
 
-# Deploy company portal — realistic multi-page PHP intranet site.
-# Files live in roles/ludus_ccdc_web_server/files/ for readability.
-- name: "Deploy company portal login page (index.php)"
+- name: "Copy CrazyRhino application files"
   ansible.builtin.copy:
-    src: index.php
-    dest: /var/www/html/index.php
-    owner: www-data
-    group: www-data
-    mode: "0777"
+    src: crazyrhino/
+    dest: /opt/crazyrhino/
+    owner: root
+    group: root
+    mode: "0755"
   become: true
 
-- name: "Deploy company intranet dashboard (home.php)"
+# VULN: Credentials in a plaintext backup file accessible on the filesystem
+- name: "VULN - Create plaintext credential backup file"
   ansible.builtin.copy:
-    src: home.php
-    dest: /var/www/html/home.php
-    owner: www-data
-    group: www-data
-    mode: "0777"
-  become: true
-
-- name: "Deploy employee directory page (employees.php)"
-  ansible.builtin.copy:
-    src: employees.php
-    dest: /var/www/html/employees.php
-    owner: www-data
-    group: www-data
-    mode: "0777"
-  become: true
-
-- name: "Deploy logout handler (logout.php)"
-  ansible.builtin.copy:
-    src: logout.php
-    dest: /var/www/html/logout.php
-    owner: www-data
-    group: www-data
-    mode: "0777"
-  become: true
-
-- name: "VULN - Create phpinfo page (information disclosure)"
-  ansible.builtin.copy:
-    dest: /var/www/html/info.php
+    dest: /opt/crazyrhino/backup_credentials.txt
     content: |
-      <?php
-      // VULN: phpinfo exposes full server configuration
-      phpinfo();
-      ?>
-    owner: www-data
-    group: www-data
-    mode: "0777"
+      CrazyRhino Application Credentials Backup
+      ==========================================
+      Admin login:  admin / admin123
+      JWT Secret:   wild-kingdom-zoo-secret-2024
+      DB location:  /app/data/store.db
+      API base:     http://localhost:5000/api
+      Debug route:  /api/debug (no auth required)
+    owner: root
+    group: root
+    mode: "0644"
   become: true
 
-# VULN: Document root is world-writable
-- name: "VULN - Set world-writable permissions on document root"
-  ansible.builtin.file:
-    path: /var/www/html
-    mode: "0777"
-    recurse: true
+# Deploy docker-compose with frontend exposed on port 80
+- name: "Deploy docker-compose.yml"
+  ansible.builtin.copy:
+    dest: /opt/crazyrhino/docker-compose.yml
+    content: |
+      version: '3.8'
+      services:
+        backend:
+          build:
+            context: ./backend
+            dockerfile: Dockerfile
+          ports:
+            - "5000:5000"
+          environment:
+            - NODE_ENV=production
+            - PORT=5000
+            # VULN: Weak hardcoded JWT secret
+            - JWT_SECRET=wild-kingdom-zoo-secret-2024
+          volumes:
+            - zoo_data:/app/data
+          restart: unless-stopped
+        frontend:
+          build:
+            context: ./frontend
+            dockerfile: Dockerfile
+          ports:
+            # VULN: HTTP only - no TLS
+            - "80:80"
+          depends_on:
+            - backend
+          restart: unless-stopped
+      volumes:
+        zoo_data:
+    owner: root
+    group: root
+    mode: "0644"
   become: true
 
-# VULN: Create weak local accounts
+# VULN: Create weak local OS accounts
 - name: "VULN - Create weak local accounts"
   ansible.builtin.shell: |
-    useradd -m -s /bin/bash admin && echo 'admin:admin' | chpasswd
-    useradd -m -s /bin/bash webadmin && echo 'webadmin:password' | chpasswd
+    useradd -m -s /bin/bash admin && echo 'admin:admin' | chpasswd || true
+    useradd -m -s /bin/bash webadmin && echo 'webadmin:password' | chpasswd || true
     echo 'root:toor' | chpasswd
   become: true
   ignore_errors: true
 
-- name: "Enable and restart Apache"
+# Build and start the CrazyRhino store
+- name: "Build and start CrazyRhino with Docker Compose"
   ansible.builtin.shell: |
-    a2enconf security
-    systemctl enable apache2
-    systemctl restart apache2
+    cd /opt/crazyrhino
+    docker compose up -d --build
+  become: true
+  register: docker_up
+  retries: 2
+  delay: 10
+
+- name: "Wait for CrazyRhino to be available on port 80"
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 80
+    timeout: 120
   become: true

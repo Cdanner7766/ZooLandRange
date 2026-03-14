@@ -1,7 +1,7 @@
 """
 Scoring engine configuration.
-Range ID and target IPs are auto-detected from the Kali machine's IP address.
-Kali lives on 10.{RANGE_ID}.99.x and services are on 10.{RANGE_ID}.10.x
+Range ID and target IPs are auto-detected from the scoring machine's IP address.
+SCORESVR lives on 10.{RANGE_ID}.99.x and services are on 10.{RANGE_ID}.10.x
 """
 
 import os
@@ -10,7 +10,7 @@ import subprocess
 
 def _detect_range_id():
     """
-    Detect the Ludus range ID from Kali's IP (10.X.99.Y pattern).
+    Detect the Ludus range ID from SCORESVR's IP (10.X.99.Y pattern).
     Tries 'ip addr show' (searching common paths), then falls back to
     parsing /proc/net/if_inet6 / /proc/net/fib_trie if ip(8) is absent.
     """
@@ -72,7 +72,7 @@ CHECK_INTERVAL = 30
 # Each service specifies:
 #   id           - unique key used in the database
 #   name         - human-readable label
-#   machine      - VM name from range-config.yaml
+#   machine      - VM hostname from range-config.yaml
 #   host         - target IP
 #   port         - TCP port
 #   check_type   - one of: http, ftp, smtp, imap_login, banner, dns, mysql,
@@ -83,51 +83,51 @@ def _build_services():
     return [
         {
             "id": "http",
-            "name": "HTTP Web Server",
-            "machine": "WEB01",
-            "host": f"{n}.31",
+            "name": "HTTP Web Store",
+            "machine": "PENGUIN",
+            "host": f"{n}.23",
             "port": 80,
             "check_type": "http",
         },
         {
             "id": "ftp",
             "name": "FTP Server",
-            "machine": "FTP01",
-            "host": f"{n}.81",
+            "machine": "OTTER",
+            "host": f"{n}.29",
             "port": 21,
             "check_type": "ftp",
             "has_credentials": True,
-            # mlopez is a Ludus Corp logistics employee provisioned by the FTP
+            # mlopez is a ZooLand Inc. logistics employee provisioned by the FTP
             # server role.  Update via the dashboard if blue team changes the password.
             "default_user": "mlopez",
-            "default_pass": "Ludus2025!",
+            "default_pass": "ZooLand2025!",
         },
         {
             "id": "smtp",
             "name": "SMTP (Mail)",
-            "machine": "MAIL01",
-            "host": f"{n}.61",
+            "machine": "FLAMINGO",
+            "host": f"{n}.38",
             "port": 25,
             "check_type": "smtp",
         },
         {
             "id": "imap",
             "name": "IMAP (Mail)",
-            "machine": "MAIL01",
-            "host": f"{n}.61",
+            "machine": "FLAMINGO",
+            "host": f"{n}.38",
             "port": 143,
             "check_type": "imap_login",
             "has_credentials": True,
-            # jsmith is a Ludus Corp IT support employee provisioned by the mail
+            # jsmith is a ZooLand Inc. IT support employee provisioned by the mail
             # server role.  Update via the dashboard if blue team changes the password.
             "default_user": "jsmith",
-            "default_pass": "Ludus2025!",
+            "default_pass": "ZooLand2025!",
         },
         {
             "id": "pop3",
             "name": "POP3 (Mail)",
-            "machine": "MAIL01",
-            "host": f"{n}.61",
+            "machine": "FLAMINGO",
+            "host": f"{n}.38",
             "port": 110,
             "check_type": "banner",
             "banner_expect": "+OK",
@@ -135,17 +135,17 @@ def _build_services():
         {
             "id": "dns",
             "name": "DNS Server",
-            "machine": "DNS01",
-            "host": f"{n}.71",
+            "machine": "GIRAFFE",
+            "host": f"{n}.7",
             "port": 53,
             "check_type": "dns",
-            "dns_query": "web.ludus.domain",
-            "dns_expected_ip": f"{n}.31",
+            "dns_query": "web.zooland.local",
+            "dns_expected_ip": f"{n}.23",
         },
         {
             "id": "mysql",
             "name": "MySQL Database",
-            "machine": "DB01",
+            "machine": "HIPPO",
             "host": f"{n}.41",
             "port": 3306,
             "check_type": "mysql",
@@ -153,24 +153,24 @@ def _build_services():
         {
             "id": "smb",
             "name": "SMB File Share",
-            "machine": "FILESVR",
-            "host": f"{n}.51",
+            "machine": "ZEBRA",
+            "host": f"{n}.15",
             "port": 445,
             "check_type": "smb",
         },
         {
             "id": "ldap",
             "name": "LDAP (Active Directory)",
-            "machine": "DC01",
-            "host": f"{n}.11",
+            "machine": "GIRAFFE",
+            "host": f"{n}.7",
             "port": 389,
             "check_type": "ldap",
         },
         {
             "id": "kerberos",
             "name": "Kerberos (Active Directory)",
-            "machine": "DC01",
-            "host": f"{n}.11",
+            "machine": "GIRAFFE",
+            "host": f"{n}.7",
             "port": 88,
             "check_type": "tcp",
         },
@@ -178,18 +178,18 @@ def _build_services():
         # Workstation RDP — verify a domain user can authenticate via NLA
         # ------------------------------------------------------------------
         {
-            "id": "rdp_pc01",
-            "name": "RDP (Workstation PC01)",
-            "machine": "PC01-W11",
-            "host": f"{n}.21",
+            "id": "rdp_meerkat",
+            "name": "RDP (Workstation MEERKAT)",
+            "machine": "MEERKAT",
+            "host": f"{n}.12",
             "port": 3389,
             "check_type": "rdp_login",
-            "rdp_domain": "ludus",
+            "rdp_domain": "zooland",
             "has_credentials": True,
-            # jsmith is a Ludus Corp domain user. Update via dashboard if
+            # jsmith is a ZooLand Inc. domain user. Update via dashboard if
             # blue team changes the password.
             "default_user": "jsmith",
-            "default_pass": "Ludus2025!",
+            "default_pass": "ZooLand2025!",
         },
         # ------------------------------------------------------------------
         # SSH — admin access to every Linux server
@@ -197,15 +197,15 @@ def _build_services():
         {
             "id": "ssh_web",
             "name": "SSH (Web Server)",
-            "machine": "WEB01",
-            "host": f"{n}.31",
+            "machine": "PENGUIN",
+            "host": f"{n}.23",
             "port": 22,
             "check_type": "ssh",
         },
         {
             "id": "ssh_db",
             "name": "SSH (Database Server)",
-            "machine": "DB01",
+            "machine": "HIPPO",
             "host": f"{n}.41",
             "port": 22,
             "check_type": "ssh",
@@ -213,16 +213,16 @@ def _build_services():
         {
             "id": "ssh_mail",
             "name": "SSH (Mail Server)",
-            "machine": "MAIL01",
-            "host": f"{n}.61",
+            "machine": "FLAMINGO",
+            "host": f"{n}.38",
             "port": 22,
             "check_type": "ssh",
         },
         {
             "id": "ssh_ftp",
             "name": "SSH (FTP Server)",
-            "machine": "FTP01",
-            "host": f"{n}.81",
+            "machine": "OTTER",
+            "host": f"{n}.29",
             "port": 22,
             "check_type": "ssh",
         },

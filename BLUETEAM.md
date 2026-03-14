@@ -1,108 +1,92 @@
-# CCDC Practice Competition - Blue Team Credentials
+# ZooLandRange — Blue Team Login Credentials
 
-**Domain:** `ludus.domain`
+**Domain:** `zooland.local`
 
 ---
 
 ## Windows Machines
 
-### Domain Controller (DC01-2022)
+### GIRAFFE (Domain Controller)
 
 | Account | Username | Password |
 |---------|----------|----------|
 | Local Administrator | `Administrator` | `password` |
-| Domain Admin | `LUDUS\domainadmin` | `password` |
-| Domain User | `LUDUS\domainuser` | `password` |
+| Domain Admin | `ZOOLAND\domainadmin` | `password` |
+| Domain User | `ZOOLAND\domainuser` | `password` |
 
-**Ludus Corporation employee accounts:**
-
-| Display Name | Username | Password | Department |
-|-------------|----------|----------|------------|
-| John Smith | `LUDUS\jsmith` | `Ludus2025!` | IT Support |
-| Barbara Wilson | `LUDUS\bwilson` | `Ludus2025!` | HR |
-| Michelle Chen | `LUDUS\mchen` | `Ludus2025!` | Finance |
-| Maria Lopez | `LUDUS\mlopez` | `Ludus2025!` | Logistics |
-| Robert Thomas | `LUDUS\rthomas` | `Ludus2025!` | Warehouse |
-
-### Windows 11 Workstation (PC01-W11)
+### MEERKAT (Workstation)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Domain User | `LUDUS\domainuser` | `password` |
-| Domain Admin | `LUDUS\domainadmin` | `password` |
+| Domain User | `ZOOLAND\domainuser` | `password` |
+| Domain Admin | `ZOOLAND\domainadmin` | `password` |
 | Local Administrator | `Administrator` | `password` |
 
-### File Server (FILESVR)
+### ZEBRA (File Server)
 
 | Account | Username | Password |
 |---------|----------|----------|
 | Local Administrator | `Administrator` | `password` |
-| Domain Admin | `LUDUS\domainadmin` | `password` |
-| Domain User | `LUDUS\domainuser` | `password` |
+| Domain Admin | `ZOOLAND\domainadmin` | `password` |
+| Domain User | `ZOOLAND\domainuser` | `password` |
 
 ---
 
 ## Linux Machines
 
-### Web Server (WEB01)
+### PENGUIN (Web / CrazyRhino Store — `http://10.X.10.23/`)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Default user | `debian` | `debian` |
-| Local user | `admin` | `admin` |
-| Local user | `webadmin` | `password` |
-| Root | `root` | `toor` |
+| OS default | `debian` | `debian` |
+| OS local | `admin` | `admin` |
+| OS local | `webadmin` | `password` |
+| OS root | `root` | `toor` |
+| App admin | `admin` | `admin123` |
+| App user | `johndoe` | `password123` |
 
-**Web Application — Company Portal (`http://10.X.10.31/`):**
-
-| Account | Email / Username | Password |
-|---------|-----------------|----------|
-| Portal user | `jsmith@ludus.domain` | `password` |
-| Portal user | `jdoe@ludus.domain` | `password` |
-| Portal admin | `admin` | `admin` |
-
-### Database Server (DB01)
+### HIPPO (Database Server)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Default user | `debian` | `debian` |
-| Local user | `admin` | `admin` |
-| Local user | `dbadmin` | `password` |
-| Root | `root` | `toor` |
+| OS default | `debian` | `debian` |
+| OS local | `admin` | `admin` |
+| OS local | `dbadmin` | `password` |
+| OS root | `root` | `toor` |
 | MySQL root | `root` | `password` |
 | MySQL admin | `admin` | `admin` |
-| MySQL app user | `dbuser` | `dbuser` |
+| MySQL app | `dbuser` | `dbuser` |
 
-### Mail Server (MAIL01)
-
-| Account | Username | Password |
-|---------|----------|----------|
-| Default user | `debian` | `debian` |
-| Local user | `mail` | `mail` |
-| Local user | `admin` | `admin` |
-| Local user | `user` | `password` |
-| Root | `root` | `toor` |
-| Employee — IT Support | `jsmith` | `Ludus2025!` |
-| Employee — HR | `bwilson` | `Ludus2025!` |
-| Employee — Finance | `mchen` | `Ludus2025!` |
-
-### FTP Server (FTP01)
+### FLAMINGO (Mail Server)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Default user | `debian` | `debian` |
-| Local user | `ftpuser` | `ftpuser` |
-| Local user | `admin` | `admin` |
-| Root | `root` | `toor` |
-| Employee — Logistics | `mlopez` | `Ludus2025!` |
-| Employee — Warehouse | `rthomas` | `Ludus2025!` |
+| OS default | `debian` | `debian` |
+| OS local | `mail` | `mail` |
+| OS local | `admin` | `admin` |
+| OS local | `user` | `password` |
+| OS root | `root` | `toor` |
+| Employee — IT Support | `jsmith` | `ZooLand2025!` |
+| Employee — HR | `bwilson` | `ZooLand2025!` |
+| Employee — Finance | `mchen` | `ZooLand2025!` |
+
+### OTTER (FTP Server)
+
+| Account | Username | Password |
+|---------|----------|----------|
+| OS default | `debian` | `debian` |
+| OS local | `ftpuser` | `ftpuser` |
+| OS local | `admin` | `admin` |
+| OS root | `root` | `toor` |
+| Employee — Logistics | `mlopez` | `ZooLand2025!` |
+| Employee — Warehouse | `rthomas` | `ZooLand2025!` |
 
 ---
 
-## Scoring Engine (SCORE01)
+## Scoring Engine (SCORESVR)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Default user | `debian` | `debian` |
+| OS default | `debian` | `debian` |
 
-**Dashboard:** `http://10.X.99.10:8080/`
+**Dashboard:** `http://10.X.99.17:8080/`
