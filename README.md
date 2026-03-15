@@ -3,6 +3,7 @@
 > **Documentation:**
 > - **[ARCHITECTURE.md](ARCHITECTURE.md)** — Competition environment design rationale, network diagram, VM architecture, Ansible automation overview, and deployment summary
 > - **[SETUP.md](SETUP.md)** — Step-by-step deployment instructions
+> - **[DEMO.md](DEMO.md)** — How to connect to and demonstrate every service (email, database, FTP, SMB, RDP, DNS, etc.)
 > - **[BLUETEAM.md](BLUETEAM.md)** — Quick-reference credential sheet
 > - **[WAZUH.md](WAZUH.md)** — Optional Wazuh SIEM integration
 
