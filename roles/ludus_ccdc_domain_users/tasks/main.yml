@@ -100,10 +100,8 @@
       reg unload "HKU\DefaultUser" 2>$null
 
       # Apply via SystemParametersInfo so it takes effect immediately
-      Add-Type -TypeDefinition @"
-      using System.Runtime.InteropServices;
-      public class Wallpaper {
-        [DllImport("user32.dll")] public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-      }
-"@
-      [Wallpaper]::SystemParametersInfo(20, 0, "", 3) | Out-Null
+      # Note: single-quoted string avoids YAML block-scalar/here-string conflict
+      try {
+        Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public class WP { [DllImport("user32.dll")] public static extern bool SystemParametersInfo(int a, int b, string c, int d); }'
+      } catch {}
+      [WP]::SystemParametersInfo(20, 0, "", 3) | Out-Null
