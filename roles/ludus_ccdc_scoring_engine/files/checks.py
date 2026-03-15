@@ -13,7 +13,6 @@ import ssl
 import struct
 import time
 import ftplib
-import smtplib
 import urllib.request
 import urllib.error
 
@@ -71,9 +70,9 @@ def check_http(host, port):
             if not body:
                 return False, "HTTP 200 but empty body"
             content = body.decode("utf-8", errors="replace").lower()
-            if "ludus corporation" not in content and "employee portal" not in content:
-                return False, f"HTTP 200 but company portal content missing ({len(body)} bytes)"
-            return True, f"HTTP 200 OK — portal loaded ({len(body)}+ bytes)"
+            if "crazyrhino" not in content and "zoo" not in content and "wild kingdom" not in content:
+                return False, f"HTTP 200 but store content missing ({len(body)} bytes)"
+            return True, f"HTTP 200 OK — store loaded ({len(body)}+ bytes)"
     except urllib.error.HTTPError as e:
         return False, f"HTTP {e.code}: {e.reason}"
     except urllib.error.URLError as e:
@@ -124,32 +123,46 @@ def check_ftp(host, port, user=None, password=None):
 
 def check_smtp(host, port):
     """
-    SMTP deep check: connect, verify 220 banner, and validate EHLO response.
-    A successful 220 + EHLO 250 confirms the MTA is running and accepting
-    connections. Relay testing is intentionally omitted — Postfix may drop
-    the session mid-transaction depending on policy, causing false negatives.
-    Uses try/finally to avoid __exit__ calling quit() on an unconnected socket.
+    SMTP check via raw socket: connect, read the 220 greeting, send EHLO,
+    and verify a 250 response.
+
+    Uses a raw socket (same pattern as check_banner / check_imap_login)
+    rather than smtplib for two reasons:
+      1. smtplib sends QUIT in its teardown path; if Postfix has already
+         closed or rate-limited the connection, smtplib raises
+         SMTPServerDisconnected — a false negative.
+      2. The EHLO hostname "scoring.ccdc.test" is unresolvable; Postfix
+         configured with reject_unknown_helo_hostname rejects it.
+    Closing the raw socket sends a clean TCP FIN that Postfix handles
+    gracefully without needing a QUIT command.
     """
-    smtp = smtplib.SMTP(timeout=TIMEOUT)
     try:
-        code, banner = smtp.connect(host, port)
-        if code != 220:
-            return False, f"Expected 220 banner, got {code}"
+        with _tcp_connect(host, port) as s:
+            # Read the server greeting — Postfix always opens with 220
+            data = s.recv(2048)
+            if not data:
+                return False, "SMTP: no response from server"
+            banner = data.decode("utf-8", errors="replace")
+            if not banner.startswith("220"):
+                return False, f"SMTP: expected 220, got: {banner[:60]}"
+            first_line = banner.splitlines()[0].strip()
 
-        code, _ = smtp.ehlo("scoring.ccdc.test")
-        if code != 250:
-            return False, f"EHLO failed: {code}"
+            # Use the range mail domain so Postfix HELO validation passes
+            s.sendall(b"EHLO scoring.zooland.local\r\n")
+            data = s.recv(2048)
+            if not data:
+                return False, "SMTP: no EHLO response"
+            ehlo = data.decode("utf-8", errors="replace")
+            if not ehlo.startswith("250"):
+                return False, f"SMTP EHLO failed: {ehlo[:60]}"
 
-        return True, f"SMTP OK | {banner.decode(errors='replace')[:60]}"
-    except smtplib.SMTPException as e:
-        return False, f"SMTP error: {e}"
+            return True, f"SMTP OK | {first_line[:60]}"
+    except socket.timeout:
+        return False, "SMTP: connection timed out"
+    except ConnectionRefusedError:
+        return False, "SMTP: connection refused"
     except Exception as e:
-        return False, str(e)
-    finally:
-        try:
-            smtp.quit()
-        except Exception:
-            pass
+        return False, f"SMTP: {e}"
 
 
 def check_banner(host, port, expected=None):
@@ -427,6 +440,25 @@ def check_imap_login(host, port, user, password):
         return False, f"IMAP error: {e}"
 
 
+def check_ssh(host, port):
+    """
+    SSH check: connect and read the server identification string.
+    A live SSH daemon always sends a banner starting with 'SSH-'.
+    """
+    try:
+        with _tcp_connect(host, port) as s:
+            banner = s.recv(256).decode("utf-8", errors="replace").strip()
+            if banner.startswith("SSH-"):
+                return True, f"SSH: {banner[:60]}"
+            return False, f"SSH: unexpected banner: {banner[:40]}"
+    except socket.timeout:
+        return False, "SSH: connection timed out"
+    except ConnectionRefusedError:
+        return False, "SSH: connection refused"
+    except Exception as e:
+        return False, str(e)
+
+
 # ---------------------------------------------------------------------------
 # RDP NLA (CredSSP v5 / NTLMv2) authentication check
 # ---------------------------------------------------------------------------
@@ -669,7 +701,7 @@ def run_check(service):
     elif ctype == "dns":
         return check_dns(
             host,
-            service.get("dns_query", "ludus.domain"),
+            service.get("dns_query", "zooland.local"),
             service.get("dns_expected_ip"),
         )
     elif ctype == "ldap":
@@ -685,5 +717,7 @@ def run_check(service):
             eff_user or service.get("default_user", "jsmith"),
             eff_pass or service.get("default_pass", ""),
         )
+    elif ctype == "ssh":
+        return check_ssh(host, port)
     else:
         return False, f"Unknown check type: {ctype}"

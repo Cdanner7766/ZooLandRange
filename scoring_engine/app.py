@@ -5,7 +5,7 @@ blue-team services on VLAN 10 are reachable from the outside.
 
 Usage:
     python3 app.py
-Dashboard: http://<kali-ip>:8080
+Dashboard: http://<scoresvr-ip>:8080
 """
 
 import logging

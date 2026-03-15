@@ -19,7 +19,7 @@ ludus:
   #   - No DNSSEC validation
   #   - Verbose DNS logging disabled (no audit trail)
   # ============================================================
-  - vm_name: "{{ range_id }}-ad-dc-win2022-giraffe"
+  - vm_name: "{{ range_id }}-GIRAFFE"
     hostname: "{{ range_id }}-GIRAFFE"
     template: win2022-server-x64-template
     vlan: 10
@@ -39,7 +39,7 @@ ludus:
   # Used for simulating user activity and lateral movement targets
   # Credentials: zooland.local\domainuser / password
   # ============================================================
-  - vm_name: "{{ range_id }}-ad-win11-meerkat"
+  - vm_name: "{{ range_id }}-MEERKAT"
     hostname: "{{ range_id }}-MEERKAT"
     template: win11-22h2-x64-enterprise-template
     vlan: 10
@@ -69,7 +69,7 @@ ludus:
   #   - No share-level permissions
   #   - Firewall rules allow all SMB traffic
   # ============================================================
-  - vm_name: "{{ range_id }}-win2022-zebra"
+  - vm_name: "{{ range_id }}-ZEBRA"
     hostname: "{{ range_id }}-ZEBRA"
     template: win2022-server-x64-template
     vlan: 10
@@ -101,7 +101,7 @@ ludus:
   #   - Server header discloses framework version
   #   - Firewall disabled
   # ============================================================
-  - vm_name: "{{ range_id }}-ubuntu-22-04-penguin"
+  - vm_name: "{{ range_id }}-PENGUIN"
     hostname: "{{ range_id }}-PENGUIN"
     template: ubuntu-22.04-x64-server-template
     vlan: 10
@@ -128,7 +128,7 @@ ludus:
   #   - FTP running with root privileges
   #   - No chroot for local users (directory traversal)
   # ============================================================
-  - vm_name: "{{ range_id }}-ubuntu-22-04-otter"
+  - vm_name: "{{ range_id }}-OTTER"
     hostname: "{{ range_id }}-OTTER"
     template: ubuntu-22.04-x64-server-template
     vlan: 10
@@ -154,7 +154,7 @@ ludus:
   #   - Firewall disabled
   #   - No SPF/DKIM/DMARC
   # ============================================================
-  - vm_name: "{{ range_id }}-debian-12-flamingo"
+  - vm_name: "{{ range_id }}-FLAMINGO"
     hostname: "{{ range_id }}-FLAMINGO"
     template: debian-12-x64-server-template
     vlan: 10
@@ -180,7 +180,7 @@ ludus:
   #   - Test database accessible to all users
   #   - Weak user accounts with full privileges
   # ============================================================
-  - vm_name: "{{ range_id }}-debian-12-hippo"
+  - vm_name: "{{ range_id }}-HIPPO"
     hostname: "{{ range_id }}-HIPPO"
     template: debian-12-x64-server-template
     vlan: 10
@@ -199,7 +199,7 @@ ludus:
   # Used for penetration testing and CCDC red team simulation
   # On VLAN 99 (separate attacker network)
   # ============================================================
-  - vm_name: "{{ range_id }}-kali-jaguar"
+  - vm_name: "{{ range_id }}-JAGUAR"
     hostname: "{{ range_id }}-JAGUAR"
     template: kali-x64-desktop-template
     vlan: 99
@@ -219,7 +219,7 @@ ludus:
   # XFCE desktop installed for GUI access
   # Dashboard: http://<scoresvr-ip>:8080
   # ============================================================
-  - vm_name: "{{ range_id }}-ubuntu-scoresvr"
+  - vm_name: "{{ range_id }}-SCORESVR"
     hostname: "{{ range_id }}-SCORESVR"
     template: ubuntu-22.04-x64-server-template
     vlan: 99

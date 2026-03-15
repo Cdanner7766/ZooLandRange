@@ -1,6 +1,6 @@
 ---
 # tasks file for ludus_ccdc_scoring_engine
-# Deploys the CCDC Blue Team Scoring Engine to SCORE01 as a systemd service.
+# Deploys the CCDC Blue Team Scoring Engine to SCORESVR as a systemd service.
 # Source files are bundled in roles/ludus_ccdc_scoring_engine/files/ so that
 # Ludus can find them after installing the role to its Ansible roles path.
 

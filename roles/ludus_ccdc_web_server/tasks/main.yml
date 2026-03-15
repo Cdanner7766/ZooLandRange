@@ -84,7 +84,7 @@
       ==========================================
       Admin login:  admin / admin123
       JWT Secret:   wild-kingdom-zoo-secret-2024
-      DB location:  /app/data/store.db
+      DB location:  /app/data/zoo_store.db
       API base:     http://localhost:5000/api
       Debug route:  /api/debug (no auth required)
     owner: root

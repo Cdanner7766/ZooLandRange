@@ -701,7 +701,7 @@ def run_check(service):
     elif ctype == "dns":
         return check_dns(
             host,
-            service.get("dns_query", "ludus.domain"),
+            service.get("dns_query", "zooland.local"),
             service.get("dns_expected_ip"),
         )
     elif ctype == "ldap":

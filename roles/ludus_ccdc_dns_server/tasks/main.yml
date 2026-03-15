@@ -23,11 +23,11 @@
       $parts = $myIp.Split('.')
       $base = "$($parts[0]).$($parts[1]).$($parts[2])"
       # Add sample DNS records for services using dynamically derived IPs
-      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "web" -IPv4Address "$base.31" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "db" -IPv4Address "$base.41" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "files" -IPv4Address "$base.51" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "mail" -IPv4Address "$base.61" -ErrorAction SilentlyContinue
-      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "ftp" -IPv4Address "$base.81" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "web"   -IPv4Address "$base.23" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "db"    -IPv4Address "$base.41" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "files" -IPv4Address "$base.15" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "mail"  -IPv4Address "$base.38" -ErrorAction SilentlyContinue
+      Add-DnsServerResourceRecordA -ZoneName "zooland.local" -Name "ftp"   -IPv4Address "$base.29" -ErrorAction SilentlyContinue
       Add-DnsServerResourceRecordMX -ZoneName "zooland.local" -Name "." -MailExchange "mail.zooland.local" -Preference 10 -ErrorAction SilentlyContinue
 
 # VULN: Allow zone transfers to any server

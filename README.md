@@ -1,5 +1,13 @@
 # ZooLandRange — CCDC Practice Environment
 
+> **Documentation:**
+> - **[ARCHITECTURE.md](ARCHITECTURE.md)** — Competition environment design rationale, network diagram, VM architecture, Ansible automation overview, and deployment summary
+> - **[SETUP.md](SETUP.md)** — Step-by-step deployment instructions
+> - **[BLUETEAM.md](BLUETEAM.md)** — Quick-reference credential sheet
+> - **[WAZUH.md](WAZUH.md)** — Optional Wazuh SIEM integration
+
+---
+
 ## Overview
 
 This Ludus range deploys a full Active Directory environment with **9 virtual machines** across 2 VLANs for CCDC (Collegiate Cyber Defense Competition) practice. All VMs are named after zoo animals and contain intentional vulnerabilities that blue teams must identify and remediate while maintaining service availability.
