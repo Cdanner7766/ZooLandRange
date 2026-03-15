@@ -35,13 +35,10 @@
 
       reg unload "HKU\DefaultUser" 2>$null
 
-      Add-Type -TypeDefinition @"
-      using System.Runtime.InteropServices;
-      public class Wallpaper {
-        [DllImport("user32.dll")] public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-      }
-"@
-      [Wallpaper]::SystemParametersInfo(20, 0, "", 3) | Out-Null
+      try {
+        Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public class WP { [DllImport("user32.dll")] public static extern bool SystemParametersInfo(int a, int b, string c, int d); }'
+      } catch {}
+      [WP]::SystemParametersInfo(20, 0, "", 3) | Out-Null
 
 - name: "Install blue team tools via Chocolatey"
   chocolatey.chocolatey.win_chocolatey:
