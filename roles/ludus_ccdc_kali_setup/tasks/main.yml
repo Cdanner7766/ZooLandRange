@@ -28,8 +28,21 @@
 
 - name: Install kali-linux-default tools
   ansible.builtin.shell: |
-    DEBIAN_FRONTEND=noninteractive apt install kali-linux-default -y --fix-missing
+    # Retry up to 5 times — large metapackage (~2.4 GB) often hits transient CDN failures
+    for attempt in 1 2 3 4 5; do
+      echo "[*] Install attempt $attempt of 5"
+      DEBIAN_FRONTEND=noninteractive apt install kali-linux-default -y --fix-missing && exit 0
+      echo "[!] Attempt $attempt failed, refreshing apt cache and retrying in 30s..."
+      apt-get clean
+      apt-get update -qq
+      sleep 30
+    done
+    echo "[!] All 5 attempts failed. Run manually: apt install kali-linux-default -y --fix-missing"
+    exit 1
   args:
     executable: /bin/bash
   become: true
   changed_when: true
+  ignore_errors: true  # Don't block deployment — JAGUAR is still usable; reinstall manually if needed
+  async: 7200  # 2-hour timeout covers worst-case retries
+  poll: 30
