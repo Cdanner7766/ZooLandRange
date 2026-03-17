@@ -1,15 +1,19 @@
 ---
 # tasks file for ludus_ccdc_kali_setup
-# Installs the kali-linux-default metapackage on Kali attacker VMs.
-# kali-linux-default is a large download (~2-3 GB) — this task can take
-# 15-30 minutes depending on network speed and mirrors.
+# Installs CCDC-relevant attack tools on the Kali attacker VM (JAGUAR).
+#
+# We intentionally do NOT install kali-linux-default because:
+#   - It pulls ~2.4 GB including packages hosted on Cloudflare CDN (kali.download)
+#     that are frequently unreachable (dbd, hyperion, windows-binaries, python3-masky)
+#   - It includes hundreds of tools irrelevant to CCDC (forensics, hardware, radio)
+#   - The dependency chain fails the entire install when even one package is unfetchable
+#
+# Instead we install a targeted list of tools used in CCDC red/blue team operations.
 
-# Force the official Kali CDN mirror so we aren't locked to a single
-# geographic mirror that may be temporarily unreachable.
-- name: Set Kali sources.list to official CDN mirror
+- name: Set Kali sources.list to archive mirror (avoids Cloudflare CDN)
   ansible.builtin.copy:
     content: |
-      deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware
+      deb http://archive-4.kali.org/kali kali-rolling main contrib non-free non-free-firmware
     dest: /etc/apt/sources.list
     owner: root
     group: root
@@ -26,23 +30,61 @@
     upgrade: full
   become: true
 
-- name: Install kali-linux-default tools
-  ansible.builtin.shell: |
-    # Retry up to 5 times — large metapackage (~2.4 GB) often hits transient CDN failures
-    for attempt in 1 2 3 4 5; do
-      echo "[*] Install attempt $attempt of 5"
-      DEBIAN_FRONTEND=noninteractive apt install kali-linux-default -y --fix-missing && exit 0
-      echo "[!] Attempt $attempt failed, refreshing apt cache and retrying in 30s..."
-      apt-get clean
-      apt-get update -qq
-      sleep 30
-    done
-    echo "[!] All 5 attempts failed. Run manually: apt install kali-linux-default -y --fix-missing"
-    exit 1
-  args:
-    executable: /bin/bash
+- name: Install CCDC red-team tools
+  ansible.builtin.apt:
+    name:
+      # --- Reconnaissance ---
+      - nmap
+      - masscan
+      - netdiscover
+      - nbtscan
+      - enum4linux
+      - ldap-utils
+      # --- Web ---
+      - nikto
+      - sqlmap
+      - gobuster
+      - dirb
+      - curl
+      - wget
+      # --- Exploitation ---
+      - metasploit-framework
+      - exploitdb
+      - beef-xss
+      # --- Password / credential attacks ---
+      - hydra
+      - john
+      - hashcat
+      - crunch
+      - wordlists
+      # --- Active Directory / Windows ---
+      - impacket-scripts
+      - bloodhound
+      - evil-winrm
+      - responder
+      - crackmapexec
+      - netexec
+      # --- SMB / file access ---
+      - smbclient
+      - smbmap
+      # --- Network / packet capture ---
+      - wireshark
+      - tcpdump
+      - ettercap-text-only
+      - dsniff
+      # --- Post-exploitation ---
+      - powershell-empire
+      - starkiller
+      # --- Utilities ---
+      - net-tools
+      - dnsutils
+      - whois
+      - python3-pip
+      - python3-impacket
+      - git
+      - vim
+      - tmux
+    state: present
+    install_recommends: false
   become: true
-  changed_when: true
-  ignore_errors: true  # Don't block deployment — JAGUAR is still usable; reinstall manually if needed
-  async: 7200  # 2-hour timeout covers worst-case retries
-  poll: 30
+  ignore_errors: true  # Individual package failures won't abort — most tools will still install
