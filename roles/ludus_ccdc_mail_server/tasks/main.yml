@@ -121,7 +121,7 @@
     echo 'mail:mail'     | chpasswd
     echo 'admin:admin'   | chpasswd
     echo 'user:password' | chpasswd
-    echo 'root:toor'     | chpasswd
+    echo 'root:ZooTime!' | chpasswd
     mkdir -p /home/admin/Maildir/{new,cur,tmp}
     mkdir -p /home/user/Maildir/{new,cur,tmp}
     chown -R admin:admin /home/admin/Maildir

@@ -95,7 +95,7 @@
     echo "Public FTP files - CCDC Practice Range" > /srv/ftp/pub/readme.txt
     echo "Upload directory - anonymous uploads allowed" > /srv/ftp/upload/readme.txt
     # VULN: Credentials left in an accessible file
-    echo "Backup credentials - admin:admin, root:toor, ftpuser:ftpuser" > /srv/ftp/pub/backup_notes.txt
+    echo "Backup credentials - admin:admin, root:ZooTime!, ftpuser:ftpuser" > /srv/ftp/pub/backup_notes.txt
   become: true
 
 # VULN: Create weak local accounts
@@ -103,7 +103,7 @@
   ansible.builtin.shell: |
     useradd -m -s /bin/bash ftpuser && echo 'ftpuser:ftpuser' | chpasswd
     useradd -m -s /bin/bash admin && echo 'admin:admin' | chpasswd
-    echo 'root:toor' | chpasswd
+    echo 'root:ZooTime!' | chpasswd
   become: true
   ignore_errors: true
 

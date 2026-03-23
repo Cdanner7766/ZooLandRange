@@ -43,6 +43,38 @@
       # Secure option (DISABLED): Set-DnsServerDiagnostics -All $true
       Set-DnsServerDiagnostics -All $false
 
+- name: "Set local Administrator password on GIRAFFE"
+  ansible.windows.win_powershell:
+    script: |
+      net user Administrator ZooTime!
+      Write-Output "Administrator password updated"
+
+- name: "Create domainadmin account and add to Domain Admins"
+  ansible.windows.win_powershell:
+    script: |
+      $domain = "zooland.local"
+      $pass = ConvertTo-SecureString "ZooTime!" -AsPlainText -Force
+      $existing = Get-ADUser -Filter "SamAccountName -eq 'domainadmin'" -ErrorAction SilentlyContinue
+      if (-not $existing) {
+        New-ADUser `
+          -SamAccountName    "domainadmin" `
+          -UserPrincipalName "domainadmin@$domain" `
+          -GivenName         "Domain" `
+          -Surname           "Admin" `
+          -DisplayName       "Domain Admin" `
+          -Description       "ZooLand Domain Administrator" `
+          -AccountPassword   $pass `
+          -PasswordNeverExpires $true `
+          -Enabled           $true `
+          -ErrorAction       Stop
+        Write-Output "Created: domainadmin"
+      } else {
+        Set-ADAccountPassword -Identity "domainadmin" -NewPassword $pass -Reset
+        Write-Output "Password updated: domainadmin"
+      }
+      Add-ADGroupMember -Identity "Domain Admins" -Members "domainadmin" -ErrorAction SilentlyContinue
+      Write-Output "domainadmin is a Domain Admin"
+
 - name: "Create ZooLand Inc. domain user accounts"
   ansible.windows.win_powershell:
     script: |
