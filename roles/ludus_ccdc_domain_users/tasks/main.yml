@@ -1,8 +1,10 @@
 ---
 # Creates ZooLand Inc. employee AD accounts on the domain controller.
-# These accounts mirror the local accounts provisioned on FLAMINGO (jsmith,
-# bwilson, mchen) and OTTER (mlopez, rthomas), giving the environment a
-# consistent set of employees across Linux services and the Windows domain.
+# 15 employees across IT, HR, Finance, Logistics, Warehouse, Marketing,
+# Operations, Veterinary, Animal Care, Security, Facilities, Research,
+# Education, Retail, and Administration departments.
+# FLAMINGO mail accounts: jsmith, bwilson, mchen
+# OTTER FTP accounts:     mlopez, rthomas
 #
 # Scoring engine defaults:
 #   IMAP (FLAMINGO) - jsmith / ZooLand2025!
@@ -46,11 +48,21 @@
     script: |
       $domain = "zooland.local"
       $users = @(
-        @{ SamAccountName="jsmith";  GivenName="John";     Surname="Smith";   Description="IT Support"  },
-        @{ SamAccountName="bwilson"; GivenName="Barbara";  Surname="Wilson";  Description="HR"          },
-        @{ SamAccountName="mchen";   GivenName="Michelle"; Surname="Chen";    Description="Finance"     },
-        @{ SamAccountName="mlopez";  GivenName="Maria";    Surname="Lopez";   Description="Logistics"   },
-        @{ SamAccountName="rthomas"; GivenName="Robert";   Surname="Thomas";  Description="Warehouse"   }
+        @{ SamAccountName="jsmith";     GivenName="John";       Surname="Smith";     Description="IT Support"   },
+        @{ SamAccountName="bwilson";    GivenName="Barbara";    Surname="Wilson";    Description="HR"           },
+        @{ SamAccountName="mchen";      GivenName="Michelle";   Surname="Chen";      Description="Finance"      },
+        @{ SamAccountName="mlopez";     GivenName="Maria";      Surname="Lopez";     Description="Logistics"    },
+        @{ SamAccountName="rthomas";    GivenName="Robert";     Surname="Thomas";    Description="Warehouse"    },
+        @{ SamAccountName="ajohnson";   GivenName="Alex";       Surname="Johnson";   Description="Marketing"    },
+        @{ SamAccountName="tlee";       GivenName="Thomas";     Surname="Lee";       Description="Operations"   },
+        @{ SamAccountName="swilliams";  GivenName="Sarah";      Surname="Williams";  Description="Veterinary"   },
+        @{ SamAccountName="pgarcia";    GivenName="Patricia";   Surname="Garcia";    Description="Animal Care"  },
+        @{ SamAccountName="kbrown";     GivenName="Kevin";      Surname="Brown";     Description="Security"     },
+        @{ SamAccountName="lmartinez";  GivenName="Lisa";       Surname="Martinez";  Description="Facilities"   },
+        @{ SamAccountName="djones";     GivenName="David";      Surname="Jones";     Description="Research"     },
+        @{ SamAccountName="nanderson";  GivenName="Nicole";     Surname="Anderson";  Description="Education"    },
+        @{ SamAccountName="cwilson";    GivenName="Christopher";Surname="Wilson";    Description="Retail"       },
+        @{ SamAccountName="emiller";    GivenName="Emma";       Surname="Miller";    Description="Administration"}
       )
       $password = ConvertTo-SecureString "ZooLand2025!" -AsPlainText -Force
       foreach ($u in $users) {
