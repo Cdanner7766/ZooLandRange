@@ -124,16 +124,16 @@
       # Each entry has its own password — realistic patterns, easily cracked with rules
       $users = @(
         @{ SamAccountName="dwhite";     GivenName="Derek";     Surname="White";     Description="IT Support";          Password="Derek2023!"    },
-        @{ SamAccountName="hlee";       GivenName="Hannah";    Surname="Lee";       Description="Marketing";           Password="Hannah123"     },
+        @{ SamAccountName="hlee";       GivenName="Hannah";    Surname="Lee";       Description="Marketing";           Password="Password1"     },
         @{ SamAccountName="rjohnson";   GivenName="Ryan";      Surname="Johnson";   Description="Finance";             Password="Spring2024"    },
         @{ SamAccountName="asmith";     GivenName="Amanda";    Surname="Smith";     Description="HR";                  Password="Amanda@1"      },
-        @{ SamAccountName="bgarcia";    GivenName="Brandon";   Surname="Garcia";    Description="Operations";          Password="Brandon1"      },
-        @{ SamAccountName="cjones";     GivenName="Claire";    Surname="Jones";     Description="Veterinary";          Password="Zookeeper1"    },
+        @{ SamAccountName="bgarcia";    GivenName="Brandon";   Surname="Garcia";    Description="Operations";          Password="Welcome1!"     },
+        @{ SamAccountName="cjones";     GivenName="Claire";    Surname="Jones";     Description="Veterinary";          Password="Zooland1"      },
         @{ SamAccountName="pmiller";    GivenName="Paul";      Surname="Miller";    Description="Animal Care";         Password="Animals2024"   },
-        @{ SamAccountName="ltaylor";    GivenName="Laura";     Surname="Taylor";    Description="Education";           Password="Teacher1!"     },
-        @{ SamAccountName="kwilliams";  GivenName="Kyle";      Surname="Williams";  Description="Warehouse";           Password="Shipping1"     },
+        @{ SamAccountName="ltaylor";    GivenName="Laura";     Surname="Taylor";    Description="Education";           Password="Summer24!"     },
+        @{ SamAccountName="kwilliams";  GivenName="Kyle";      Surname="Williams";  Description="Warehouse";           Password="Qwerty123"     },
         @{ SamAccountName="scooper";    GivenName="Steven";    Surname="Cooper";    Description="IT Manager";          Password="P@ssw0rd1"     },
-        @{ SamAccountName="jharris";    GivenName="Jennifer";  Surname="Harris";    Description="Systems Administrator";Password="Adm1n2024!"   },
+        @{ SamAccountName="jharris";    GivenName="Jennifer";  Surname="Harris";    Description="Systems Administrator";Password="Admin123!"    },
         @{ SamAccountName="mrobinson";  GivenName="Michael";   Surname="Robinson";  Description="Network Administrator";Password="N3tw0rk@1"    }
       )
       foreach ($u in $users) {
