@@ -13,22 +13,22 @@
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Local Administrator | `Administrator` | `password` |
-| Domain Admin | `ZOOLAND\domainadmin` | `password` |
+| Local Administrator | `Administrator` | `ZooTime!` |
+| Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 
 ### MEERKAT
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Local Administrator | `Administrator` | `password` |
-| Domain Admin | `ZOOLAND\domainadmin` | `password` |
+| Local Administrator | `Administrator` | `ZooTime!` |
+| Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 
 ### ZEBRA
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Local Administrator | `Administrator` | `password` |
-| Domain Admin | `ZOOLAND\domainadmin` | `password` |
+| Local Administrator | `Administrator` | `ZooTime!` |
+| Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 
 ---
 
@@ -38,22 +38,22 @@
 
 | Account | Username | Password |
 |---------|----------|----------|
-| root | `root` | `toor` |
+| root | `root` | `ZooTime!` |
 
 ### HIPPO
 
 | Account | Username | Password |
 |---------|----------|----------|
-| root | `root` | `toor` |
+| root | `root` | `ZooTime!` |
 
 ### FLAMINGO
 
 | Account | Username | Password |
 |---------|----------|----------|
-| root | `root` | `toor` |
+| root | `root` | `ZooTime!` |
 
 ### OTTER
 
 | Account | Username | Password |
 |---------|----------|----------|
-| root | `root` | `toor` |
+| root | `root` | `ZooTime!` |

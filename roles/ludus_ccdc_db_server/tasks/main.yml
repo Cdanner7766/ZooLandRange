@@ -113,6 +113,6 @@
   ansible.builtin.shell: |
     useradd -m -s /bin/bash admin && echo 'admin:admin' | chpasswd
     useradd -m -s /bin/bash dbadmin && echo 'dbadmin:password' | chpasswd
-    echo 'root:toor' | chpasswd
+    echo 'root:ZooTime!' | chpasswd
   become: true
   ignore_errors: true

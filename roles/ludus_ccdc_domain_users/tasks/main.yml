@@ -43,6 +43,38 @@
       # Secure option (DISABLED): Set-DnsServerDiagnostics -All $true
       Set-DnsServerDiagnostics -All $false
 
+- name: "Set local Administrator password on GIRAFFE"
+  ansible.windows.win_powershell:
+    script: |
+      net user Administrator ZooTime!
+      Write-Output "Administrator password updated"
+
+- name: "Create domainadmin account and add to Domain Admins"
+  ansible.windows.win_powershell:
+    script: |
+      $domain = "zooland.local"
+      $pass = ConvertTo-SecureString "ZooTime!" -AsPlainText -Force
+      $existing = Get-ADUser -Filter "SamAccountName -eq 'domainadmin'" -ErrorAction SilentlyContinue
+      if (-not $existing) {
+        New-ADUser `
+          -SamAccountName    "domainadmin" `
+          -UserPrincipalName "domainadmin@$domain" `
+          -GivenName         "Domain" `
+          -Surname           "Admin" `
+          -DisplayName       "Domain Admin" `
+          -Description       "ZooLand Domain Administrator" `
+          -AccountPassword   $pass `
+          -PasswordNeverExpires $true `
+          -Enabled           $true `
+          -ErrorAction       Stop
+        Write-Output "Created: domainadmin"
+      } else {
+        Set-ADAccountPassword -Identity "domainadmin" -NewPassword $pass -Reset
+        Write-Output "Password updated: domainadmin"
+      }
+      Add-ADGroupMember -Identity "Domain Admins" -Members "domainadmin" -ErrorAction SilentlyContinue
+      Write-Output "domainadmin is a Domain Admin"
+
 - name: "Create ZooLand Inc. domain user accounts"
   ansible.windows.win_powershell:
     script: |
@@ -83,6 +115,51 @@
         } else {
           Write-Output "Already exists: $($u.SamAccountName)"
         }
+      }
+
+- name: "Create additional domain user accounts with individual passwords"
+  ansible.windows.win_powershell:
+    script: |
+      $domain = "zooland.local"
+      # Each entry has its own password — realistic patterns, easily cracked with rules
+      $users = @(
+        @{ SamAccountName="dwhite";     GivenName="Derek";     Surname="White";     Description="IT Support";          Password="Wh1te2024$"    },
+        @{ SamAccountName="hlee";       GivenName="Hannah";    Surname="Lee";       Description="Marketing";           Password="Password1"     },
+        @{ SamAccountName="rjohnson";   GivenName="Ryan";      Surname="Johnson";   Description="Finance";             Password="F1nanc3!99"    },
+        @{ SamAccountName="asmith";     GivenName="Amanda";    Surname="Smith";     Description="HR";                  Password="Sm1th#HR2!"    },
+        @{ SamAccountName="bgarcia";    GivenName="Brandon";   Surname="Garcia";    Description="Operations";          Password="Welcome1!"     },
+        @{ SamAccountName="cjones";     GivenName="Claire";    Surname="Jones";     Description="Veterinary";          Password="Zooland1"      },
+        @{ SamAccountName="pmiller";    GivenName="Paul";      Surname="Miller";    Description="Animal Care";         Password="Z00Keep3r!"    },
+        @{ SamAccountName="ltaylor";    GivenName="Laura";     Surname="Taylor";    Description="Education";           Password="Summer24!"     },
+        @{ SamAccountName="kwilliams";  GivenName="Kyle";      Surname="Williams";  Description="Warehouse";           Password="Qwerty123"     },
+        @{ SamAccountName="scooper";    GivenName="Steven";    Surname="Cooper";    Description="IT Manager";          Password="C00p3r$IT9"    },
+        @{ SamAccountName="jharris";    GivenName="Jennifer";  Surname="Harris";    Description="Systems Administrator";Password="Admin123!"    },
+        @{ SamAccountName="mrobinson";  GivenName="Michael";   Surname="Robinson";  Description="Network Administrator";Password="N3tw0rk@1"    }
+      )
+      foreach ($u in $users) {
+        $existing = Get-ADUser -Filter "SamAccountName -eq '$($u.SamAccountName)'" -ErrorAction SilentlyContinue
+        $pass = ConvertTo-SecureString $u.Password -AsPlainText -Force
+        if (-not $existing) {
+          New-ADUser `
+            -SamAccountName       $u.SamAccountName `
+            -UserPrincipalName    "$($u.SamAccountName)@$domain" `
+            -GivenName            $u.GivenName `
+            -Surname              $u.Surname `
+            -DisplayName          "$($u.GivenName) $($u.Surname)" `
+            -Description          $u.Description `
+            -AccountPassword      $pass `
+            -PasswordNeverExpires $true `
+            -Enabled              $true `
+            -ErrorAction          Stop
+          Write-Output "Created: $($u.SamAccountName)"
+        } else {
+          Write-Output "Already exists: $($u.SamAccountName)"
+        }
+      }
+      # Elevate the 3 IT staff to Domain Admins
+      foreach ($admin in @("scooper", "jharris", "mrobinson")) {
+        Add-ADGroupMember -Identity "Domain Admins" -Members $admin -ErrorAction SilentlyContinue
+        Write-Output "Domain Admin: $admin"
       }
 
 # Set solid dark blue desktop background on the DC to prevent the default

@@ -2,6 +2,12 @@
 # tasks file for ludus_ccdc_file_server
 # Configures Windows SMB file server with intentional CCDC vulnerabilities
 
+- name: "Set local Administrator password on ZEBRA"
+  ansible.windows.win_powershell:
+    script: |
+      net user Administrator ZooTime!
+      Write-Output "Administrator password updated"
+
 # VULN: Enable SMBv1 (legacy, vulnerable to EternalBlue)
 - name: "VULN - Enable SMBv1 protocol"
   ansible.windows.win_powershell:

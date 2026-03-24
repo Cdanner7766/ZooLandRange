@@ -5,7 +5,7 @@ ludus:
   # GIRAFFE - Domain Controller + DNS (Windows Server 2022)
   # Primary DC for zooland.local
   # Manages AD, DNS (domain-integrated), DHCP, Group Policy
-  # Credentials: Administrator / password (Ludus default)
+  # Credentials: Administrator / ZooTime!
   # Domain employee accounts (all use password: ZooLand2025!):
   #   jsmith  - John Smith,    IT Support  (IMAP scoring account on FLAMINGO)
   #   bwilson - Barbara Wilson, HR
@@ -37,7 +37,7 @@ ludus:
   # ============================================================
   # MEERKAT - Windows 11 Domain-joined Workstation
   # Used for simulating user activity and lateral movement targets
-  # Credentials: zooland.local\domainuser / password
+  # Credentials: Administrator / ZooTime!, domain accounts use ZooLand2025!
   # ============================================================
   - vm_name: "{{ range_id }}-MEERKAT"
     hostname: "{{ range_id }}-MEERKAT"
@@ -60,7 +60,7 @@ ludus:
   # Domain-joined to zooland.local
   # Service: SMB on port 445
   # Shares: \\ZEBRA\Public, \\ZEBRA\Shared
-  # Credentials: Administrator / password, zooland.local accounts
+  # Credentials: Administrator / ZooTime!, domain accounts use ZooLand2025!
   # VULNS:
   #   - Everyone has Full Control on all shares
   #   - No share passwords required
@@ -118,7 +118,7 @@ ludus:
   # ============================================================
   # OTTER - FTP Server (Ubuntu 22.04) - vsftpd
   # Service: FTP on port 21
-  # Credentials: ftpuser/ftpuser, admin/admin, root/toor
+  # Credentials: root/ZooTime!, ftpuser/ftpuser, admin/admin
   # VULNS:
   #   - Anonymous access enabled with upload permissions
   #   - Writable FTP root directory
@@ -145,7 +145,7 @@ ludus:
   # ============================================================
   # FLAMINGO - Mail Server (Debian 12) - Postfix + Dovecot
   # Service: SMTP (25), POP3 (110), IMAP (143)
-  # Credentials: mail/mail, admin/admin, root/toor
+  # Credentials: root/ZooTime!, mail/mail, admin/admin
   # VULNS:
   #   - Open relay (accepts and relays mail from any domain)
   #   - No SMTP authentication required for relay
@@ -171,7 +171,7 @@ ludus:
   # ============================================================
   # HIPPO - Database Server (Debian 12) - MySQL/MariaDB
   # Service: MySQL on port 3306
-  # Credentials: root/password, admin/admin, dbuser/dbuser
+  # Credentials: root/ZooTime!, admin/admin, dbuser/dbuser
   # VULNS:
   #   - MySQL root password is "password"
   #   - Remote root login allowed from any host (%)
