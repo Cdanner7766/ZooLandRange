@@ -123,16 +123,16 @@
       $domain = "zooland.local"
       # Each entry has its own password — realistic patterns, easily cracked with rules
       $users = @(
-        @{ SamAccountName="dwhite";     GivenName="Derek";     Surname="White";     Description="IT Support";          Password="Derek2023!"    },
+        @{ SamAccountName="dwhite";     GivenName="Derek";     Surname="White";     Description="IT Support";          Password="Wh1te2024$"    },
         @{ SamAccountName="hlee";       GivenName="Hannah";    Surname="Lee";       Description="Marketing";           Password="Password1"     },
-        @{ SamAccountName="rjohnson";   GivenName="Ryan";      Surname="Johnson";   Description="Finance";             Password="Spring2024"    },
-        @{ SamAccountName="asmith";     GivenName="Amanda";    Surname="Smith";     Description="HR";                  Password="Amanda@1"      },
+        @{ SamAccountName="rjohnson";   GivenName="Ryan";      Surname="Johnson";   Description="Finance";             Password="F1nanc3!99"    },
+        @{ SamAccountName="asmith";     GivenName="Amanda";    Surname="Smith";     Description="HR";                  Password="Sm1th#HR2!"    },
         @{ SamAccountName="bgarcia";    GivenName="Brandon";   Surname="Garcia";    Description="Operations";          Password="Welcome1!"     },
         @{ SamAccountName="cjones";     GivenName="Claire";    Surname="Jones";     Description="Veterinary";          Password="Zooland1"      },
-        @{ SamAccountName="pmiller";    GivenName="Paul";      Surname="Miller";    Description="Animal Care";         Password="Animals2024"   },
+        @{ SamAccountName="pmiller";    GivenName="Paul";      Surname="Miller";    Description="Animal Care";         Password="Z00Keep3r!"    },
         @{ SamAccountName="ltaylor";    GivenName="Laura";     Surname="Taylor";    Description="Education";           Password="Summer24!"     },
         @{ SamAccountName="kwilliams";  GivenName="Kyle";      Surname="Williams";  Description="Warehouse";           Password="Qwerty123"     },
-        @{ SamAccountName="scooper";    GivenName="Steven";    Surname="Cooper";    Description="IT Manager";          Password="P@ssw0rd1"     },
+        @{ SamAccountName="scooper";    GivenName="Steven";    Surname="Cooper";    Description="IT Manager";          Password="C00p3r$IT9"    },
         @{ SamAccountName="jharris";    GivenName="Jennifer";  Surname="Harris";    Description="Systems Administrator";Password="Admin123!"    },
         @{ SamAccountName="mrobinson";  GivenName="Michael";   Surname="Robinson";  Description="Network Administrator";Password="N3tw0rk@1"    }
       )
