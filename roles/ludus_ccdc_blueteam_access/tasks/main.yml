@@ -1,0 +1,64 @@
+---
+# All tasks delegate to localhost (the Proxmox host). Uses pveum/pvesh CLI — no
+# API credentials required when running as root on the Proxmox node.
+
+- name: "Create {{ blueteam_pool_name }} Proxmox pool"
+  ansible.builtin.command: >-
+    pveum pool add {{ blueteam_pool_name }}
+    --comment "Blue team VMs - ZooLand CCDC range"
+  delegate_to: localhost
+  run_once: true
+  register: pool_create
+  failed_when: pool_create.rc != 0 and 'already exists' not in (pool_create.stderr + pool_create.stdout)
+  changed_when: pool_create.rc == 0
+
+- name: "Create {{ blueteam_proxmox_user }} Proxmox user"
+  ansible.builtin.command: >-
+    pveum user add {{ blueteam_proxmox_user }}
+    --password {{ blueteam_proxmox_password | quote }}
+    --comment "Blue team Proxmox console access"
+  delegate_to: localhost
+  run_once: true
+  register: user_create
+  failed_when: user_create.rc != 0 and 'already exists' not in (user_create.stderr + user_create.stdout)
+  changed_when: user_create.rc == 0
+  no_log: true
+
+- name: "Query all VMs in cluster"
+  ansible.builtin.command: pvesh get /cluster/resources --type vm --output-format json
+  delegate_to: localhost
+  run_once: true
+  register: cluster_vms
+  changed_when: false
+
+- name: "Resolve blue team VM IDs from cluster resources"
+  ansible.builtin.set_fact:
+    blueteam_vmids: >-
+      {{
+        (cluster_vms.stdout | from_json)
+        | selectattr('name', 'in', blueteam_vm_names)
+        | map(attribute='vmid')
+        | list
+      }}
+  delegate_to: localhost
+  run_once: true
+
+- name: "Add blue team VMs to {{ blueteam_pool_name }} pool"
+  ansible.builtin.command: >-
+    pvesh set /pools/{{ blueteam_pool_name }}
+    -vms {{ blueteam_vmids | join(',') }}
+  delegate_to: localhost
+  run_once: true
+  when: blueteam_vmids | length > 0
+  register: pool_member
+  changed_when: pool_member.rc == 0
+
+- name: "Grant PVEVMUser to {{ blueteam_proxmox_user }} on {{ blueteam_pool_name }} pool"
+  ansible.builtin.command: >-
+    pveum acl modify /pool/{{ blueteam_pool_name }}
+    --users {{ blueteam_proxmox_user }}
+    --roles PVEVMUser
+  delegate_to: localhost
+  run_once: true
+  register: acl_grant
+  changed_when: acl_grant.rc == 0

@@ -4,6 +4,36 @@ Chronological record of all changes made to the range after initial deployment.
 
 ---
 
+## 2026-05-21 (continued)
+
+### Docs: BlueTeam Proxmox Access Documented Across All Relevant Files
+**Files:** `README.md`, `ARCHITECTURE.md`, `BLUETEAM.md`
+
+Updated documentation to reflect the new `ludus_ccdc_blueteam_access` role:
+
+- **ARCHITECTURE.md** — Added role to the Custom Ansible Roles table and to the Role File Structure and File Map sections.
+- **README.md** — Added a "Proxmox Console Access" block to the SCORESVR section documenting the `BlueTeam@pve` user, `ZooLand-BlueTeam` pool, pool members, and `PVEVMUser` permission.
+- **BLUETEAM.md** — Added a minimal "Proxmox" credential row (`BlueTeam@pve` / `BlueTeam`) to the credential sheet.
+
+---
+
+### New: `ludus_ccdc_blueteam_access` Role — BlueTeam Proxmox User and Pool
+**Files:** `roles/ludus_ccdc_blueteam_access/tasks/main.yml`,
+`roles/ludus_ccdc_blueteam_access/defaults/main.yml`,
+`roles/ludus_ccdc_blueteam_access/meta/main.yml`,
+`range-config.yaml`, `SETUP.md`
+
+Added a new Ansible role that provisions Proxmox-level access for the blue team:
+
+1. **Creates the `ZooLand-BlueTeam` Proxmox pool** — a logical container for all blue team VMs.
+2. **Creates the `BlueTeam@pve` Proxmox user** (password: `BlueTeam`) — a PVE-realm account stored in Proxmox's own credential store (not Linux PAM).
+3. **Resolves VM IDs dynamically** by querying `/cluster/resources` at deploy time, then adds GIRAFFE, MEERKAT, ZEBRA, PENGUIN, OTTER, FLAMINGO, and HIPPO to the pool. JAGUAR (red team) and SCORESVR (admin infra) are excluded.
+4. **Grants `PVEVMUser`** to `BlueTeam@pve` on the pool — allows start/stop/reboot and console access to all pool members; does not allow config changes, cloning, or snapshot management.
+
+All tasks delegate to `localhost` (the Proxmox host) and run once. The role is idempotent — re-deploying will not error if the user or pool already exists. Assigned to SCORESVR so it fires last, after all blue team VMs are provisioned.
+
+---
+
 ## 2026-05-21
 
 ### Fix: RDP Scoring — Grant Domain Users Remote Desktop Access on MEERKAT

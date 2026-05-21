@@ -7,6 +7,14 @@
 
 ---
 
+## Proxmox
+
+| Account | Username | Password |
+|---------|----------|----------|
+| Proxmox | `BlueTeam@pve` | `BlueTeam` |
+
+---
+
 ## Windows Machines
 
 ### GIRAFFE
