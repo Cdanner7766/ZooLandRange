@@ -238,6 +238,10 @@ ludus:
 
 network:
   inter_vlan_default: REJECT
+  always_blocked_networks:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
   rules:
     - name: Only allow corporate to attacker on 443
       vlan_src: 10

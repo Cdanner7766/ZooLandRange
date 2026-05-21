@@ -6,6 +6,33 @@ Chronological record of all changes made to the range after initial deployment.
 
 ## 2026-05-21 (continued)
 
+### New: `VULNERABILITIES.md` — Full Vulnerability Reference for Blue Team VMs
+**Files:** `VULNERABILITIES.md`
+
+Created a dedicated vulnerability reference listing all intentional misconfigurations
+across the 7 blue team VMs (GIRAFFE, MEERKAT, ZEBRA, PENGUIN, OTTER, FLAMINGO, HIPPO).
+Excludes the Debian router, JAGUAR, and SCORESVR.
+
+---
+
+### New: Network Isolation — Host Firewall Rules and `always_blocked_networks`
+**Files:** `SETUP.md`, `range-config.yaml`
+
+Added two-layer RFC 1918 isolation to prevent range VMs from reaching the Ludus
+management network, other ranges, or the broader LAN:
+
+- **`range-config.yaml`** — added `always_blocked_networks` (`10.0.0.0/8`,
+  `172.16.0.0/12`, `192.168.0.0/16`) to the `network:` block. The Debian router
+  enforces these blocks automatically on every `ludus range deploy`.
+- **`SETUP.md`** — added new Step 4 with the host-level `iptables` commands
+  (`br_netfilter`, intra-range ACCEPT, three RFC 1918 DROPs, `netfilter-persistent save`)
+  that enforce the same isolation at the Proxmox hypervisor FORWARD chain. Renumbered
+  old Steps 4 and 5 to 5 and 6.
+
+---
+
+## 2026-05-21 (continued)
+
 ### Docs: BlueTeam Proxmox Access Documented Across All Relevant Files
 **Files:** `README.md`, `ARCHITECTURE.md`, `BLUETEAM.md`
 
