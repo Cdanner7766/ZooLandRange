@@ -234,6 +234,7 @@ ludus:
     roles:
       - ludus_ubuntu_desktop
       - ludus_ccdc_scoring_engine
+      - ludus_ccdc_blueteam_access
 
 network:
   inter_vlan_default: REJECT
