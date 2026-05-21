@@ -27,7 +27,7 @@ Every service in this range was chosen because it appears in real CCDC competiti
 | **Mail Server** | FLAMINGO | Email (SMTP + IMAP/POP3) is a traditional CCDC service. Open relays allow the red team to send phishing mail internally. Cleartext IMAP is a common credential capture vector. Mail servers also introduce SPF/DKIM/DMARC hardening opportunities. |
 | **FTP Server** | OTTER | Legacy file transfer services appear frequently in CCDC to simulate an older corporate infrastructure. Anonymous FTP, no TLS, and directory traversal are introduced intentionally, matching vulnerability classes commonly seen in competition injections. |
 | **Scoring Engine** | SCORESVR | Mirrors the real CCDC scoring infrastructure. The engine polls all services every 30 seconds and provides a live dashboard. This teaches blue teams to verify that hardening changes have not accidentally broken a scored service. |
-| **Red Team Machine** | JAGUAR | The Kali Linux VM gives students a dedicated attack platform (separate VLAN) to practice red team techniques against their own environment. It ships with the full `kali-linux-default` tool suite. |
+| **Red Team Machine** | JAGUAR | The Kali Linux VM gives students a dedicated attack platform (separate VLAN) to practice red team techniques against their own environment. It ships with a targeted CCDC tool set (nmap, metasploit, impacket, bloodhound, netexec, and more). |
 
 Together these services represent a **realistic small-to-medium corporate environment**: a Windows domain, three Linux back-end servers, a file server, an e-commerce application, and the supporting network infrastructure that a blue team would be handed at the start of a competition.
 
@@ -55,7 +55,7 @@ The range deploys **9 virtual machines** across two isolated VLANs.
 
 | # | Name | OS | Role | IP (.99.x) | RAM | CPUs |
 |---|------|----|------|-----------|-----|------|
-| 8 | **JAGUAR** | Kali Linux | Red team attack platform (`kali-linux-default`) | `.34` | 8 GB | 4 |
+| 8 | **JAGUAR** | Kali Linux | Red team attack platform — targeted CCDC tool set | `.34` | 8 GB | 4 |
 | 9 | **SCORESVR** | Ubuntu 22.04 + XFCE | Scoring engine dashboard (Flask + SQLite, systemd service) | `.17` | 4 GB | 2 |
 
 **Total attacker network: 2 VMs — 12 GB RAM, 6 vCPUs**
@@ -150,7 +150,7 @@ Each role is a self-contained Ansible role that configures one service and inten
 
 | Role | Target VM | What it does |
 |------|-----------|--------------|
-| `ludus_ccdc_domain_users` | GIRAFFE | Creates 5 ZooLand Inc. employee AD accounts; adds DNS A records for all services; configures DNS vulnerabilities (open zone transfer, recursion) |
+| `ludus_ccdc_domain_users` | GIRAFFE | Creates 27 domain accounts (domainadmin + 15 standard employees + 12 hidden accounts with 3 DA); adds DNS A records; configures DNS vulnerabilities (open zone transfer, recursion) |
 | `ludus_ccdc_web_server` | PENGUIN | Installs Docker; deploys CrazyRhino React+Node.js store; creates vulnerable docker-compose with hardcoded JWT secret; disables UFW |
 | `ludus_ccdc_db_server` | HIPPO | Installs MariaDB; binds to 0.0.0.0; sets weak root password; grants remote root login; creates `ccdc_company` database with employee PII |
 | `ludus_ccdc_file_server` | ZEBRA | Enables SMBv1; creates Public and Shared SMB shares with Everyone Full Control; enables Guest account; disables Windows Firewall |
@@ -158,7 +158,7 @@ Each role is a self-contained Ansible role that configures one service and inten
 | `ludus_ccdc_ftp_server` | OTTER | Installs vsftpd; enables anonymous upload; disables TLS and chroot; creates employee FTP accounts (mlopez, rthomas) |
 | `ludus_ccdc_workstation` | MEERKAT | Installs blue team tools via Chocolatey (Wireshark, Burp Suite, Process Hacker, ILSpy, etc.) |
 | `ludus_ccdc_scoring_engine` | SCORESVR | Deploys Flask scoring engine as systemd service; installs Python venv + dependencies; configures SQLite database |
-| `ludus_ccdc_kali_setup` | JAGUAR | Installs `kali-linux-default` tool metapackage (~2–3 GB) |
+| `ludus_ccdc_kali_setup` | JAGUAR | Installs targeted CCDC red-team tools via apt from `archive-4.kali.org` (avoids kali-linux-default CDN failures) |
 | `ludus_ubuntu_desktop` | SCORESVR | Installs XFCE4 desktop environment so SCORESVR can display the scoring dashboard via browser |
 
 ### Role File Structure
@@ -185,7 +185,7 @@ roles/
 
 ## Scoring Engine
 
-The scoring engine is the most important piece of infrastructure for CCDC practice. It runs on SCORESVR (VLAN 99) and polls all 14 services on the corporate network (VLAN 10) every **30 seconds**, awarding pass/fail scores to each.
+The scoring engine is the most important piece of infrastructure for CCDC practice. It runs on SCORESVR (VLAN 99) and polls all 15 services on the corporate network (VLAN 10) every **30 seconds**, awarding pass/fail scores to each.
 
 ### Scored Services
 
@@ -296,8 +296,10 @@ ZooLandRange/
 ├── range-config.yaml          ← Single-file VM and network definition for Ludus
 ├── ARCHITECTURE.md            ← This file — design rationale and architecture overview
 ├── README.md                  ← Full technical reference (credentials, vulns, service details)
-├── SETUP.md                   ← Step-by-step deployment instructions
+├── SETUP.md                   ← Step-by-step deployment instructions (includes template build commands)
+├── DEMO.md                    ← Hands-on service demonstration guide
 ├── BLUETEAM.md                ← Quick-reference credential sheet for blue team practice
+├── UPDATES.md                 ← Chronological log of all changes made to the range
 ├── WAZUH.md                   ← Optional Wazuh SIEM integration guide
 │
 ├── roles/                     ← Custom Ansible roles (one per service)

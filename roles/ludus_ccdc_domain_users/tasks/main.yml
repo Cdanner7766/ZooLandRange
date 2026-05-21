@@ -1,8 +1,12 @@
 ---
 # Creates ZooLand Inc. employee AD accounts on the domain controller.
-# 15 employees across IT, HR, Finance, Logistics, Warehouse, Marketing,
-# Operations, Veterinary, Animal Care, Security, Facilities, Research,
-# Education, Retail, and Administration departments.
+# 27 accounts total:
+#   domainadmin           — domain admin service account (ZooTime!)
+#   15 standard employees — all use ZooLand2025! (jsmith, bwilson, mchen, mlopez,
+#                           rthomas, ajohnson, tlee, swilliams, pgarcia, kbrown,
+#                           lmartinez, djones, nanderson, cwilson, emiller)
+#   12 hidden employees   — individual passwords (mixed weak/mid-strength, not in BLUETEAM.md)
+#                           includes 3 Domain Admins: scooper, jharris, mrobinson
 # FLAMINGO mail accounts: jsmith, bwilson, mchen
 # OTTER FTP accounts:     mlopez, rthomas
 #
@@ -121,7 +125,7 @@
   ansible.windows.win_powershell:
     script: |
       $domain = "zooland.local"
-      # Each entry has its own password — realistic patterns, easily cracked with rules
+      # Each entry has its own password — 5 are weak (plain wordlists), 6 are mid-strength (require rules)
       $users = @(
         @{ SamAccountName="dwhite";     GivenName="Derek";     Surname="White";     Description="IT Support";          Password="Wh1te2024$"    },
         @{ SamAccountName="hlee";       GivenName="Hannah";    Surname="Lee";       Description="Marketing";           Password="Password1"     },
