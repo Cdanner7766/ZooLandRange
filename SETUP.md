@@ -81,7 +81,43 @@ ludus ansible role list
 ludus range config set -f range-config.yaml
 ```
 
-## Step 4: Deploy the range
+## Step 4: Apply host-level network isolation
+
+These rules run on the **Ludus host itself** (not inside a VM) and block range VMs from reaching other private RFC 1918 networks — protecting the Ludus management network, other ranges, and the broader LAN from the range. Run these once as root on the Ludus host:
+
+```bash
+# Load the br_netfilter kernel module so bridge traffic passes through iptables
+/sbin/modprobe br_netfilter
+
+# Enable iptables processing for bridged traffic
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
+
+# Allow range VMs to communicate with each other (must come before the 10.0.0.0/8 DROP)
+/sbin/iptables -I FORWARD 1 -s 10.1.0.0/16 -d 10.1.0.0/16 -j ACCEPT
+
+# Block range VMs from reaching 10.0.0.0/8 private space (other ranges, host mgmt network)
+/sbin/iptables -I FORWARD 2 -s 10.1.0.0/16 -d 10.0.0.0/8 -j DROP
+
+# Block range VMs from reaching 172.16.0.0/12 private space
+/sbin/iptables -I FORWARD 3 -s 10.1.0.0/16 -d 172.16.0.0/12 -j DROP
+
+# Block range VMs from reaching 192.168.0.0/16 private space
+/sbin/iptables -I FORWARD 4 -s 10.1.0.0/16 -d 192.168.0.0/16 -j DROP
+
+# Make br_netfilter load on every reboot
+echo "br_netfilter" >> /etc/modules-load.d/br_netfilter.conf
+
+# Make bridge-nf-call-iptables=1 persist on every reboot
+echo "net.bridge.bridge-nf-call-iptables=1" >> /etc/sysctl.d/99-bridge.conf
+sysctl -p /etc/sysctl.d/99-bridge.conf
+
+# Save iptables rules so they persist on every reboot
+/sbin/netfilter-persistent save
+```
+
+> **Note:** These rules only need to be applied once per Ludus host — they are not range-specific and survive reboots. The `range-config.yaml` also includes `always_blocked_networks` which enforces the same isolation at the Debian router level on every deploy, providing defense in depth.
+
+## Step 5: Deploy the range
 
 ```bash
 ludus range deploy
@@ -96,6 +132,7 @@ To deploy a specific role to a specific VM:
 ```bash
 ludus range deploy -t user-defined-roles --limit <VM_NAME> --only-roles <ROLE_NAME>
 ```
+
 
 ## Roles Overview
 
@@ -197,7 +234,7 @@ sudo journalctl -u scoring_engine -f
 | RDP — Workstation | MEERKAT | .12 | 3389 | CredSSP/NLA login (NTLMv2) | 50 |
 | **Total max per round** | | | | | **800** |
 
-## Step 5: Validate the Deployment
+## Step 6: Validate the Deployment
 
 After deployment completes, SSH into the Kali VM (JAGUAR) and run the validation script:
 
