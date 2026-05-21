@@ -1,12 +1,6 @@
 ---
-# tasks file for ludus_ccdc_blueteam_access
-#
-# Creates a Proxmox pool containing the 7 blue team VMs, creates a BlueTeam@pve
-# user, and grants PVEVMUser on the pool (start/stop/console access, no config changes).
-#
-# All tasks delegate to localhost (the Proxmox/Ludus host) and run once regardless
-# of which VM this role is assigned to. Uses pveum/pvesh CLI — no API credentials
-# required when executing as root on the Proxmox node.
+# All tasks delegate to localhost (the Proxmox host). Uses pveum/pvesh CLI — no
+# API credentials required when running as root on the Proxmox node.
 
 - name: "Create {{ blueteam_pool_name }} Proxmox pool"
   ansible.builtin.command: >-
@@ -15,7 +9,7 @@
   delegate_to: localhost
   run_once: true
   register: pool_create
-  failed_when: pool_create.rc != 0 and 'already exists' not in pool_create.stderr
+  failed_when: pool_create.rc != 0 and 'already exists' not in (pool_create.stderr + pool_create.stdout)
   changed_when: pool_create.rc == 0
 
 - name: "Create {{ blueteam_proxmox_user }} Proxmox user"
@@ -26,7 +20,7 @@
   delegate_to: localhost
   run_once: true
   register: user_create
-  failed_when: user_create.rc != 0 and 'already exists' not in user_create.stderr
+  failed_when: user_create.rc != 0 and 'already exists' not in (user_create.stderr + user_create.stdout)
   changed_when: user_create.rc == 0
   no_log: true
 
@@ -56,7 +50,8 @@
   delegate_to: localhost
   run_once: true
   when: blueteam_vmids | length > 0
-  changed_when: true
+  register: pool_member
+  changed_when: pool_member.rc == 0
 
 - name: "Grant PVEVMUser to {{ blueteam_proxmox_user }} on {{ blueteam_pool_name }} pool"
   ansible.builtin.command: >-
@@ -65,4 +60,5 @@
     --roles PVEVMUser
   delegate_to: localhost
   run_once: true
-  changed_when: true
+  register: acl_grant
+  changed_when: acl_grant.rc == 0

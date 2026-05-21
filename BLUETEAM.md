@@ -11,7 +11,7 @@
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Proxmox | `BlueTeam` | `BlueTeam` |
+| Proxmox | `BlueTeam@pve` | `BlueTeam` |
 
 ---
 
