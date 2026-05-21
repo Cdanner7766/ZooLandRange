@@ -12,7 +12,7 @@ This guide walks through deploying Wazuh as an intrusion detection system (IDS) 
 2. [Why the Server Must Run on Linux](#2-why-the-server-must-run-on-linux)
 3. [Choosing the Right VM for the Server](#3-choosing-the-right-vm-for-the-server)
 4. [Network and Port Reference](#4-network-and-port-reference)
-5. [Part 1 — Install the Wazuh Server (OTTER)](#part-1--install-the-wazuh-server-ftp01)
+5. [Part 1 — Install the Wazuh Server (OTTER)](#part-1--install-the-wazuh-server-otter)
 6. [Part 2 — Install Agents on Linux VMs](#part-2--install-agents-on-linux-vms)
 7. [Part 3 — Install Agents on Windows VMs](#part-3--install-agents-on-windows-vms)
 8. [Part 4 — Using the Wazuh Dashboard](#part-4--using-the-wazuh-dashboard)
@@ -107,7 +107,7 @@ All VLAN 10 machines can reach each other freely. Wazuh uses these ports interna
 
 Since the Windows Firewall is disabled on all Windows VMs and iptables is flushed on all Linux VMs in this range, **no firewall changes are needed**. All ports are open by default.
 
-Throughout this guide, replace `10.X.10.29` with OTTER's actual IP address (`10.2.10.81` if your range ID is 2, `10.3.10.81` if your range ID is 3, etc.).
+Throughout this guide, replace `10.X.10.29` with OTTER's actual IP address (`10.2.10.29` if your range ID is 2, `10.3.10.29` if your range ID is 3, etc.).
 
 ---
 
@@ -199,15 +199,15 @@ Replace **all three** `<...-ip>` placeholders with OTTER's IP address. For examp
 nodes:
   indexer:
     - name: node-1
-      ip: "10.2.10.81"
+      ip: "10.2.10.29"
 
   server:
     - name: wazuh-1
-      ip: "10.2.10.81"
+      ip: "10.2.10.29"
 
   dashboard:
     - name: dashboard
-      ip: "10.2.10.81"
+      ip: "10.2.10.29"
 ```
 
 Save and exit: **Ctrl+O**, **Enter**, **Ctrl+X**
@@ -357,13 +357,13 @@ Log out and repeat Steps 2.1–2.5 on each remaining Linux VM.
 
 ## Part 3 — Install Agents on Windows VMs
 
-Repeat these steps on each Windows VM: **GIRAFFE**, **MEERKAT**, **ZEBRA**, and **GIRAFFE**.
+Repeat these steps on each Windows VM: **GIRAFFE**, **MEERKAT**, and **ZEBRA**.
 
 ### Step 3.1 — RDP or Console Into the Windows VM
 
 Connect using RDP or the Proxmox console. Log in as the local Administrator:
 - **Username:** `Administrator`
-- **Password:** `password`
+- **Password:** `ZooTime!`
 
 ### Step 3.2 — Open PowerShell as Administrator
 
@@ -526,7 +526,7 @@ Find the `<global>` section and add:
   <email_notification>yes</email_notification>
   <email_to>blueteam@zooland.local</email_to>
   <smtp_server>10.X.10.38</smtp_server>
-  <email_from>wazuh@ftp01.zooland.local</email_from>
+  <email_from>wazuh@otter.zooland.local</email_from>
   <email_maxperhour>12</email_maxperhour>
   <email_alert_level>10</email_alert_level>
 </global>

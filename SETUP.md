@@ -2,17 +2,48 @@
 
 ## Prerequisites
 
-- Ludus host (v1.5+) with the following templates available:
-  - `win2022-server-x64-template`
-  - `win11-22h2-x64-enterprise-template`
-  - `debian-12-x64-server-template`
-  - `ubuntu-22.04-x64-server-template`
-  - `kali-x64-desktop-template`
+- Ludus host (v1.5+) installed and accessible
+- The following VM templates must be built before deploying the range:
 
-Verify templates with:
+| Template Name | Used By |
+|---|---|
+| `win2022-server-x64-template` | GIRAFFE, ZEBRA |
+| `win11-22h2-x64-enterprise-template` | MEERKAT |
+| `debian-12-x64-server-template` | FLAMINGO, HIPPO |
+| `ubuntu-22.04-x64-server-template` | PENGUIN, OTTER, SCORESVR |
+| `kali-x64-desktop-template` | JAGUAR |
+
+## Step 0: Build Templates
+
+Templates are base VM images that Ludus provisions VMs from. They only need to be built once per Ludus host — skip this step if the templates are already present.
+
+**Check which templates are already built:**
 ```bash
 ludus templates list
 ```
+
+**Build a specific template** (replace with each template name from the table above):
+```bash
+ludus templates build -n win2022-server-x64-template
+ludus templates build -n win11-22h2-x64-enterprise-template
+ludus templates build -n debian-12-x64-server-template
+ludus templates build -n ubuntu-22.04-x64-server-template
+ludus templates build -n kali-x64-desktop-template
+```
+
+> **Note:** Template builds take 30–90 minutes each depending on hardware and internet speed.
+> Windows templates take the longest due to OS installation and updates.
+
+**Monitor build progress:**
+```bash
+ludus templates logs -f
+```
+
+**Verify all templates completed successfully:**
+```bash
+ludus templates list
+```
+All five templates should show a `COMPLETE` status before proceeding.
 
 ## Step 1: Clone this repository on your Ludus host
 
@@ -78,7 +109,7 @@ ludus range deploy -t user-defined-roles --limit <VM_NAME> --only-roles <ROLE_NA
 | `ludus_ubuntu_desktop` | SCORESVR | Ubuntu 22.04 | XFCE4 desktop environment + LightDM | — |
 | `ludus_ccdc_scoring_engine` | SCORESVR | Ubuntu 22.04 | Flask scoring engine + SQLite + systemd | 8080 |
 | `ludus_ccdc_domain_users` | GIRAFFE | Windows Server 2022 | Creates ZooLand Inc. employee AD accounts + DNS A records + DNS vulns | 53 |
-| `ludus_ccdc_kali_setup` | JAGUAR | Kali Linux | Installs `kali-linux-default` tool metapackage | — |
+| `ludus_ccdc_kali_setup` | JAGUAR | Kali Linux | Installs targeted CCDC red-team tools from `archive-4.kali.org` | — |
 
 ## Updating a Role
 
@@ -104,6 +135,7 @@ ludus ansible role add -d roles/ludus_ccdc_workstation
 ludus ansible role add -d roles/ludus_ccdc_scoring_engine
 ludus ansible role add -d roles/ludus_ccdc_domain_users
 ludus ansible role add -d roles/ludus_ccdc_kali_setup
+ludus ansible role add -d roles/ludus_ubuntu_desktop
 ludus range deploy -t user-defined-roles
 ```
 

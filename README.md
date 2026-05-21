@@ -63,19 +63,30 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Local Administrator | `Administrator` | `password` |
-| Domain Admin | `ZOOLAND\domainadmin` | `password` |
-| Domain User | `ZOOLAND\domainuser` | `password` |
+| Local Administrator | `Administrator` | `ZooTime!` |
+| Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 
 **ZooLand Inc. employee accounts** (created by `ludus_ccdc_domain_users` role):
 
 | Display Name | Username | Password | Department |
 |-------------|----------|----------|------------|
-| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(IMAP scoring account on FLAMINGO)* |
+| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(IMAP scoring + RDP scoring account)* |
 | Barbara Wilson | `bwilson` | `ZooLand2025!` | HR |
 | Michelle Chen | `mchen` | `ZooLand2025!` | Finance |
 | Maria Lopez | `mlopez` | `ZooLand2025!` | Logistics *(FTP scoring account on OTTER)* |
 | Robert Thomas | `rthomas` | `ZooLand2025!` | Warehouse |
+| Alex Johnson | `ajohnson` | `ZooLand2025!` | Marketing |
+| Thomas Lee | `tlee` | `ZooLand2025!` | Operations |
+| Sarah Williams | `swilliams` | `ZooLand2025!` | Veterinary |
+| Patricia Garcia | `pgarcia` | `ZooLand2025!` | Animal Care |
+| Kevin Brown | `kbrown` | `ZooLand2025!` | Security |
+| Lisa Martinez | `lmartinez` | `ZooLand2025!` | Facilities |
+| David Jones | `djones` | `ZooLand2025!` | Research |
+| Nicole Anderson | `nanderson` | `ZooLand2025!` | Education |
+| Christopher Wilson | `cwilson` | `ZooLand2025!` | Retail |
+| Emma Miller | `emiller` | `ZooLand2025!` | Administration |
+
+> 12 additional hidden accounts with individual passwords also exist in AD (not documented here — for red team discovery).
 
 **Services:** Active Directory, DNS (AD-integrated zone, scored), DHCP, Group Policy, Kerberos, LDAP
 
@@ -115,9 +126,10 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Domain User (autologon) | `ZOOLAND\domainuser` | `password` |
-| Domain Admin | `ZOOLAND\domainadmin` | `password` |
-| Local Administrator | `Administrator` | `password` |
+| Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
+| Local Administrator | `Administrator` | `ZooTime!` |
+
+> Domain users (e.g. `jsmith / ZooLand2025!`) can also RDP — Domain Users group has Remote Desktop access.
 
 **Installed Software:** Firefox, Burp Suite, 7zip, Process Hacker, Wireshark, ILSpy, NetworkMonitor, ExplorerSuite, Croc
 
@@ -141,9 +153,8 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Local Administrator | `Administrator` | `password` |
-| Domain Admin | `ZOOLAND\domainadmin` | `password` |
-| Domain User | `ZOOLAND\domainuser` | `password` |
+| Local Administrator | `Administrator` | `ZooTime!` |
+| Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 
 **SMB Shares:**
 
@@ -193,7 +204,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Account | Username | Password | Notes |
 |---------|----------|----------|-------|
-| OS root | `root` | `toor` | VULN: weak root |
+| OS root | `root` | `ZooTime!` | VULN: weak root |
 | OS local user | `admin` | `admin` | VULN: weak account |
 | OS local user | `webadmin` | `password` | VULN: weak account |
 | App admin | `admin` | `admin123` | CrazyRhino admin panel |
@@ -214,7 +225,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | 9 | **Server header disclosure** | `X-Powered-By: Express` reveals backend framework | Default Express config |
 | 10 | **Firewall disabled** | UFW completely disabled and reset | `ufw disable && ufw --force reset` |
 | 11 | **Minimum password length only 6** | `password.length < 6` — weak passwords accepted on registration | `backend/routes/auth.js` |
-| 12 | **Weak OS accounts** | `admin:admin`, `webadmin:password`, `root:toor` | `/etc/shadow` |
+| 12 | **Weak OS accounts** | `admin:admin`, `webadmin:password`, `root:ZooTime!` | `/etc/shadow` |
 
 **CrazyRhino Exploit Examples:**
 
@@ -254,7 +265,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 |---------|----------|----------|-------|
 | OS / FTP user | `ftpuser` | `ftpuser` | VULN: weak account |
 | OS / FTP user | `admin` | `admin` | VULN: weak account |
-| OS root | `root` | `toor` | VULN: weak root |
+| OS root | `root` | `ZooTime!` | VULN: weak root |
 | FTP anonymous | `anonymous` | (any password) | VULN: anonymous upload |
 | Ludus default | `debian` | `debian` | |
 | Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP account** |
@@ -266,7 +277,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 /srv/ftp/               (anonymous root, world-writable)
 ├── pub/
 │   ├── readme.txt      ("Public FTP files - CCDC Practice Range")
-│   └── backup_notes.txt ("Backup credentials - admin:admin, root:toor, ftpuser:ftpuser")
+│   └── backup_notes.txt ("Backup credentials - admin:admin, root:ZooTime!, ftpuser:ftpuser")
 ├── upload/
 │   └── readme.txt      ("Upload directory - anonymous uploads allowed")
 └── incoming/
@@ -284,7 +295,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | 6 | **FTP bounce enabled** | `pasv_promiscuous=YES`, `port_promiscuous=YES` | `/etc/vsftpd.conf` |
 | 7 | **Version in banner** | `ftpd_banner=Welcome to CCDC Practice FTP Server (vsftpd 3.0.5)` | `/etc/vsftpd.conf` |
 | 8 | **Credentials in share** | `backup_notes.txt` contains plaintext passwords | `/srv/ftp/pub/backup_notes.txt` |
-| 9 | **Weak user accounts** | `ftpuser:ftpuser`, `admin:admin`, `root:toor` | `/etc/shadow` |
+| 9 | **Weak user accounts** | `ftpuser:ftpuser`, `admin:admin`, `root:ZooTime!` | `/etc/shadow` |
 | 10 | **Firewall disabled** | iptables flushed, all policies set to ACCEPT | iptables rules |
 
 ---
@@ -307,7 +318,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS / mail user | `mail` | `mail` | VULN: weak account |
 | OS / mail user | `admin` | `admin` | VULN: weak account |
 | OS / mail user | `user` | `password` | VULN: weak account |
-| OS root | `root` | `toor` | VULN: weak root |
+| OS root | `root` | `ZooTime!` | VULN: weak root |
 | Ludus default | `debian` | `debian` | |
 | Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine IMAP account** |
 | Employee (HR) | `bwilson` | `ZooLand2025!` | |
@@ -324,7 +335,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | 5 | **Plaintext IMAP/POP3 auth** | `disable_plaintext_auth = no` — credentials sent in clear | `/etc/dovecot/dovecot.conf` |
 | 6 | **No SSL (Dovecot)** | `ssl = no` — no encryption on IMAP/POP3 | `/etc/dovecot/dovecot.conf` |
 | 7 | **No SPF/DKIM/DMARC** | No email authentication records — spoofing possible | DNS records |
-| 8 | **Weak user accounts** | `mail:mail`, `admin:admin`, `user:password`, `root:toor` | `/etc/shadow` |
+| 8 | **Weak user accounts** | `mail:mail`, `admin:admin`, `user:password`, `root:ZooTime!` | `/etc/shadow` |
 | 9 | **Firewall disabled** | iptables flushed, all policies set to ACCEPT | iptables rules |
 
 ---
@@ -348,7 +359,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | MySQL root (remote) | `root` | `password` | `root@%` (any host) |
 | MySQL admin | `admin` | `admin` | `admin@%` (any host) |
 | MySQL app user | `dbuser` | `dbuser` | `dbuser@%` (any host) |
-| OS root | `root` | `toor` | SSH/console |
+| OS root | `root` | `ZooTime!` | SSH/console |
 | OS local user | `admin` | `admin` | SSH/console |
 | OS local user | `dbadmin` | `password` | SSH/console |
 | Ludus default | `debian` | `debian` | SSH/console |
@@ -373,7 +384,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | 7 | **Test database open** | `test` database with `GRANT ALL` to anonymous users (`''@'%'`) | MySQL user grants |
 | 8 | **PII in database** | SSNs and salaries stored in plaintext in `ccdc_company.employees` | `ccdc_company` database |
 | 9 | **Firewall disabled** | iptables flushed, all policies set to ACCEPT | iptables rules |
-| 10 | **Weak OS accounts** | `admin:admin`, `dbadmin:password`, `root:toor` | `/etc/shadow` |
+| 10 | **Weak OS accounts** | `admin:admin`, `dbadmin:password`, `root:ZooTime!` | `/etc/shadow` |
 
 ---
 
@@ -386,7 +397,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | IP | `10.X.99.34` |
 | RAM / CPUs | 8 GB / 4 |
 | VLAN | 99 (Attacker Network) |
-| Tools | `kali-linux-default` (installed via `ludus_ccdc_kali_setup` role) |
+| Tools | Targeted CCDC tool set installed via `ludus_ccdc_kali_setup` role (nmap, metasploit, impacket, bloodhound, evil-winrm, netexec, hydra, john, wireshark, sqlmap, gobuster, and more) |
 
 **Credentials:**
 
@@ -418,7 +429,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 
 Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask application under the `scoring` system user, managed by systemd (`scoring_engine.service`). Results are stored in SQLite at `/opt/scoring_engine/scoring.db`.
 
-- Polls all **11 services** every **30 seconds**
+- Polls all **15 services** every **30 seconds**
 - Scores each check pass/fail with point values ranging from 25–100 pts
 - Auto-detects the range ID from the scoring machine's `10.X.99.Y` IP
 - Live dashboard available at **`http://10.X.99.17:8080/`** from VLAN 10 machines (port 8080 is permitted through the firewall)
@@ -435,8 +446,12 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 | POP3 Banner (FLAMINGO:110) | 50 |
 | SMB File Server (ZEBRA:445) | 50 |
 | FTP Login (OTTER:21) — `mlopez` | 50 |
-| RDP Workstation (MEERKAT:3389) | 50 |
-| **Max per round** | **800** |
+| RDP Workstation (MEERKAT:3389) — `jsmith` | 50 |
+| SSH Banner (PENGUIN:22) | 25 |
+| SSH Banner (HIPPO:22) | 25 |
+| SSH Banner (FLAMINGO:22) | 25 |
+| SSH Banner (OTTER:22) | 25 |
+| **Max per round** | **900** |
 
 ---
 
@@ -447,8 +462,8 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 - MySQL root remotely accessible with password `password`
 - Anonymous FTP with full write access
 - Guest SMB access enabled with no authentication
-- Domain built-in accounts use default Ludus passwords (`password`)
-- ZooLand Inc. employee accounts (`jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`) use `ZooLand2025!`
+- Windows admin/domain admin accounts use `ZooTime!` (given to blue team)
+- 15 standard ZooLand Inc. employee accounts use `ZooLand2025!`; 12 hidden accounts have individual weak/mid passwords
 - CrazyRhino admin: `admin` / `admin123` (unchanged default)
 
 ### Network / Firewall

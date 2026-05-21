@@ -6,12 +6,13 @@ ludus:
   # Primary DC for zooland.local
   # Manages AD, DNS (domain-integrated), DHCP, Group Policy
   # Credentials: Administrator / ZooTime!
-  # Domain employee accounts (all use password: ZooLand2025!):
-  #   jsmith  - John Smith,    IT Support  (IMAP scoring account on FLAMINGO)
-  #   bwilson - Barbara Wilson, HR
-  #   mchen   - Michelle Chen,  Finance
-  #   mlopez  - Maria Lopez,    Logistics  (FTP scoring account on OTTER)
-  #   rthomas - Robert Thomas,  Warehouse
+  # Domain employee accounts — 27 total:
+  #   15 standard (all ZooLand2025!): jsmith (IMAP scoring), bwilson, mchen,
+  #     mlopez (FTP scoring), rthomas, ajohnson, tlee, swilliams, pgarcia,
+  #     kbrown, lmartinez, djones, nanderson, cwilson, emiller
+  #   12 hidden (individual passwords, mixed weak/mid, not in BLUETEAM.md):
+  #     dwhite, hlee, rjohnson, asmith, bgarcia, cjones, pmiller, ltaylor,
+  #     kwilliams + DAs: scooper, jharris, mrobinson
   # DNS scored here (AD-integrated zone) - port 53
   # DNS VULNS (applied via ludus_ccdc_domain_users role):
   #   - Zone transfers allowed to any host (AXFR to anyone)

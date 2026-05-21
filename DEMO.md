@@ -471,7 +471,7 @@ exit
 smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%ZooLand2025!"
 
 # As the domain admin
-smbclient //10.X.10.15/Shared -U "zooland.local\\domainadmin%password"
+smbclient //10.X.10.15/Shared -U "zooland.local\\domainadmin%ZooTime!"
 ```
 
 SMB shell commands:
@@ -522,10 +522,10 @@ prompt should appear. Files in the share will be visible and editable.
 xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland /cert:ignore
 
 # Log in as domain admin
-xfreerdp /v:10.X.10.12 /u:domainadmin /p:password /d:zooland /cert:ignore
+xfreerdp /v:10.X.10.12 /u:domainadmin /p:ZooTime! /d:zooland /cert:ignore
 
 # Log in as local Administrator
-xfreerdp /v:10.X.10.12 /u:Administrator /p:password /cert:ignore
+xfreerdp /v:10.X.10.12 /u:Administrator /p:ZooTime! /cert:ignore
 
 # Useful display options
 xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland \
@@ -703,20 +703,20 @@ Each has weak OS accounts created by their respective Ansible roles.
 
 ```bash
 # Web server (PENGUIN)
-ssh root@10.X.10.23          # password: toor
+ssh root@10.X.10.23          # password: ZooTime!
 ssh admin@10.X.10.23         # password: admin
 ssh webadmin@10.X.10.23      # password: password
 
 # FTP server (OTTER)
-ssh root@10.X.10.29          # password: toor
+ssh root@10.X.10.29          # password: ZooTime!
 ssh mlopez@10.X.10.29        # password: ZooLand2025!
 
 # Mail server (FLAMINGO)
-ssh root@10.X.10.38          # password: toor
+ssh root@10.X.10.38          # password: ZooTime!
 ssh jsmith@10.X.10.38        # password: ZooLand2025!
 
 # Database server (HIPPO)
-ssh root@10.X.10.41          # password: toor
+ssh root@10.X.10.41          # password: ZooTime!
 ssh admin@10.X.10.41         # password: admin
 ```
 
@@ -795,8 +795,8 @@ The script tests:
 | DNS | GIRAFFE | `10.X.10.7` | 53 | `dig web.zooland.local @10.X.10.7` |
 | LDAP | GIRAFFE | `10.X.10.7` | 389 | `ldapsearch -x -H ldap://10.X.10.7 -b "DC=zooland,DC=local" "(objectClass=user)"` |
 | Kerberos | GIRAFFE | `10.X.10.7` | 88 | `nc -zv 10.X.10.7 88` |
-| SSH — Web | PENGUIN | `10.X.10.23` | 22 | `ssh root@10.X.10.23` (pw: `toor`) |
-| SSH — DB | HIPPO | `10.X.10.41` | 22 | `ssh root@10.X.10.41` (pw: `toor`) |
-| SSH — Mail | FLAMINGO | `10.X.10.38` | 22 | `ssh root@10.X.10.38` (pw: `toor`) |
-| SSH — FTP | OTTER | `10.X.10.29` | 22 | `ssh root@10.X.10.29` (pw: `toor`) |
+| SSH — Web | PENGUIN | `10.X.10.23` | 22 | `ssh root@10.X.10.23` (pw: `ZooTime!`) |
+| SSH — DB | HIPPO | `10.X.10.41` | 22 | `ssh root@10.X.10.41` (pw: `ZooTime!`) |
+| SSH — Mail | FLAMINGO | `10.X.10.38` | 22 | `ssh root@10.X.10.38` (pw: `ZooTime!`) |
+| SSH — FTP | OTTER | `10.X.10.29` | 22 | `ssh root@10.X.10.29` (pw: `ZooTime!`) |
 | Scoring Dashboard | SCORESVR | `10.X.99.17` | 8080 | `curl http://10.X.99.17:8080/api/status` |
