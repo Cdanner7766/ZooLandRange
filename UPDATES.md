@@ -6,6 +6,16 @@ Chronological record of all changes made to the range after initial deployment.
 
 ## 2026-05-21 (continued)
 
+### New: `REDTEAM.md` — Red Team Reference Sheet
+**Files:** `REDTEAM.md`
+
+Created a minimal red team reference with the Proxmox `RedTeam` account credentials,
+scope (`10.1.x.x`, with the range router and scoring server explicitly out of scope),
+and a short list of common vulnerability categories present in the range — names only,
+no IPs, credentials, or VM-specific detail.
+
+---
+
 ### New: `VULNERABILITIES.md` — Full Vulnerability Reference for Blue Team VMs
 **Files:** `VULNERABILITIES.md`
 
