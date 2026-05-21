@@ -6,6 +6,17 @@ Chronological record of all changes made to the range after initial deployment.
 
 ## 2026-05-21 (continued)
 
+### Docs: BlueTeam Proxmox Access Documented Across All Relevant Files
+**Files:** `README.md`, `ARCHITECTURE.md`, `BLUETEAM.md`
+
+Updated documentation to reflect the new `ludus_ccdc_blueteam_access` role:
+
+- **ARCHITECTURE.md** — Added role to the Custom Ansible Roles table and to the Role File Structure and File Map sections.
+- **README.md** — Added a "Proxmox Console Access" block to the SCORESVR section documenting the `BlueTeam@pve` user, `ZooLand-BlueTeam` pool, pool members, and `PVEVMUser` permission.
+- **BLUETEAM.md** — Added a "Proxmox Console Access" section at the top of the credential sheet with the Proxmox UI URL, `BlueTeam@pve` credentials, and instructions for locating the ZooLand-BlueTeam pool.
+
+---
+
 ### New: `ludus_ccdc_blueteam_access` Role — BlueTeam Proxmox User and Pool
 **Files:** `roles/ludus_ccdc_blueteam_access/tasks/main.yml`,
 `roles/ludus_ccdc_blueteam_access/defaults/main.yml`,

@@ -425,6 +425,20 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 |---------|----------|----------|
 | Ludus default | `debian` | `debian` |
 
+**Proxmox Console Access:**
+
+The `ludus_ccdc_blueteam_access` role runs at the end of deployment (assigned to SCORESVR, delegates to the Proxmox host) and provisions the following:
+
+| What | Value |
+|------|-------|
+| Proxmox user | `BlueTeam@pve` |
+| Password | `BlueTeam` |
+| Pool | `ZooLand-BlueTeam` |
+| Pool members | GIRAFFE, MEERKAT, ZEBRA, PENGUIN, OTTER, FLAMINGO, HIPPO |
+| Permission | `PVEVMUser` — start, stop, reboot, console access; no config or snapshot changes |
+
+Blue team members can log in to the Proxmox web UI at `https://<ludus-host-ip>:8006` with `BlueTeam@pve` / `BlueTeam` and access the console of any VM in the pool.
+
 **Scoring Engine:**
 
 Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask application under the `scoring` system user, managed by systemd (`scoring_engine.service`). Results are stored in SQLite at `/opt/scoring_engine/scoring.db`.
