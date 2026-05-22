@@ -25,19 +25,17 @@ Excludes the Debian router, JAGUAR, and SCORESVR.
 
 ---
 
-### New: Network Isolation — Host Firewall Rules and `always_blocked_networks`
+### Reverted: Network Isolation Removed
 **Files:** `SETUP.md`, `range-config.yaml`
 
-Added two-layer RFC 1918 isolation to prevent range VMs from reaching the Ludus
-management network, other ranges, or the broader LAN:
+Both network isolation mechanisms have been removed:
 
-- **`range-config.yaml`** — added `always_blocked_networks` (`10.0.0.0/8`,
-  `172.16.0.0/12`, `192.168.0.0/16`) to the `network:` block. The Debian router
-  enforces these blocks automatically on every `ludus range deploy`.
-- **`SETUP.md`** — added new Step 4 with the host-level `iptables` commands
-  (`br_netfilter`, intra-range ACCEPT, three RFC 1918 DROPs, `netfilter-persistent save`)
-  that enforce the same isolation at the Proxmox hypervisor FORWARD chain. Renumbered
-  old Steps 4 and 5 to 5 and 6.
+- **`range-config.yaml`** — `always_blocked_networks` removed. The `10.0.0.0/8` entry
+  conflicted with the Ludus host IP (`10.0.66.2`) and the range's own `10.1.0.0/16`
+  subnet, risking broken deployment and inter-VLAN VM communication.
+- **`SETUP.md`** — host-level `iptables` step removed (did not work in practice).
+
+Network isolation can be revisited once the correct scope is confirmed.
 
 ---
 
