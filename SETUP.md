@@ -123,6 +123,10 @@ sysctl -p /etc/sysctl.d/99-bridge.conf
 ludus range deploy
 ```
 
+```bash
+ludus range logs -f 
+```
+
 To deploy only the custom roles (e.g., after modifying a role):
 ```bash
 ludus range deploy -t user-defined-roles
