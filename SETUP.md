@@ -138,6 +138,26 @@ ludus range deploy -t user-defined-roles --limit <VM_NAME> --only-roles <ROLE_NA
 ```
 
 
+## Troubleshooting: Windows VMs cannot resolve internet names
+
+Domain-joined VMs use GIRAFFE (the DC) for DNS, and GIRAFFE forwards public lookups. The `ludus_ccdc_domain_users` role sets `1.1.1.1` and `8.8.8.8` as GIRAFFE's forwarders so lookups do not depend on the Ludus router's DNS. If a role still fails with "remote name could not be resolved", check from GIRAFFE:
+
+```powershell
+Get-DnsServerForwarder
+Resolve-DnsName community.chocolatey.org
+```
+
+If it fails, set the forwarders by hand and re-run the roles:
+
+```powershell
+Set-DnsServerForwarder -IPAddress 1.1.1.1,8.8.8.8
+Clear-DnsServerCache -Force
+```
+
+```bash
+ludus range deploy -t user-defined-roles
+```
+
 ## Roles Overview
 
 | Role | VM | OS | Service | Ports |

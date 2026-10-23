@@ -19,6 +19,37 @@
       Add-LocalGroupMember -Group "Remote Desktop Users" -Member "ZOOLAND\Domain Users" -ErrorAction SilentlyContinue
       Write-Output "Domain Users added to Remote Desktop Users"
 
+- name: "Wait for internet DNS resolution on MEERKAT"
+  ansible.windows.win_powershell:
+    script: |
+      # MEERKAT resolves names through GIRAFFE (the DC). Wait for GIRAFFE to
+      # forward public lookups before Chocolatey tries to download anything.
+      $name = "community.chocolatey.org"
+      $ok = $false
+      for ($i = 1; $i -le 12 -and -not $ok; $i++) {
+        try {
+          Clear-DnsClientCache
+          Resolve-DnsName $name -Type A -DnsOnly -ErrorAction Stop | Out-Null
+          $ok = $true
+        } catch {
+          Write-Output "Attempt $i/12: cannot resolve $name, retrying in 10s"
+          Start-Sleep -Seconds 10
+        }
+      }
+
+      if (-not $ok) {
+        # Safety net: keep the DC as primary DNS (needed for AD) and add a public
+        # resolver as secondary so internet lookups still work.
+        Write-Output "DC DNS did not resolve $name; adding 1.1.1.1 as secondary DNS"
+        $nic = Get-NetAdapter | Where-Object Status -eq "Up" | Select-Object -First 1
+        $current = (Get-DnsClientServerAddress -InterfaceIndex $nic.ifIndex -AddressFamily IPv4).ServerAddresses
+        $servers = @($current) + "1.1.1.1" | Select-Object -Unique
+        Set-DnsClientServerAddress -InterfaceIndex $nic.ifIndex -ServerAddresses $servers
+        Clear-DnsClientCache
+        Resolve-DnsName $name -Type A -DnsOnly -ErrorAction Stop | Out-Null
+      }
+      Write-Output "$name resolves"
+
 - name: "Bootstrap Chocolatey"
   ansible.windows.win_shell: |
     if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
