@@ -35,6 +35,14 @@
       Add-DnsServerResourceRecordA -ZoneName $zone -Name "ftp"   -IPv4Address "$base.29" -ErrorAction SilentlyContinue
       Add-DnsServerResourceRecordMX -ZoneName $zone -Name "." -MailExchange "mail.zooland.local" -Preference 10 -ErrorAction SilentlyContinue
 
+      # Public DNS forwarders so every domain member can resolve internet names
+      # (Chocolatey, Windows Update, etc.). Ludus points GIRAFFE at the router
+      # (x.x.x.254) as its only forwarder; if the router's DNS is down or its
+      # upstream is a blocked private address, all lookups time out. Public
+      # forwarders bypass the router. Root hints stay on as a last resort.
+      Set-DnsServerForwarder -IPAddress "1.1.1.1","8.8.8.8" -UseRootHint $true -Timeout 3
+      Clear-DnsServerCache -Force
+
       # VULN: Allow zone transfers to any host (AXFR to anyone)
       # Secure option (DISABLED): restrict SecureSecondaries to specific IPs only
       Set-DnsServerPrimaryZone -Name $zone -SecureSecondaries TransferAnyServer -ErrorAction SilentlyContinue

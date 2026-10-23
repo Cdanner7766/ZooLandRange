@@ -4,6 +4,24 @@ Chronological record of all changes made to the range after initial deployment.
 
 ---
 
+## 2026-10-23
+
+### Fix: Internet DNS Failure on Domain Members (Chocolatey Download Failed on MEERKAT)
+**Files:** `roles/ludus_ccdc_domain_users/tasks/main.yml`, `roles/ludus_ccdc_workstation/tasks/main.yml`, `SETUP.md`
+
+MEERKAT could not resolve `community.chocolatey.org`. Domain members use GIRAFFE
+for DNS, and GIRAFFE's only forwarder was the Ludus router (`x.x.x.254`), which was
+not answering. Direct queries to `1.1.1.1` worked, so the internet path was fine.
+
+- **ludus_ccdc_domain_users** — GIRAFFE now sets public DNS forwarders
+  (`1.1.1.1`, `8.8.8.8`, root hints kept) so lookups no longer depend on the router.
+- **ludus_ccdc_workstation** — new task before the Chocolatey bootstrap waits up to
+  2 minutes for internet DNS to resolve. If the DC still cannot resolve, it adds
+  `1.1.1.1` as a secondary DNS server (DC stays primary so AD keeps working).
+- **SETUP.md** — added a DNS troubleshooting note.
+
+---
+
 ## 2026-05-21 (continued)
 
 ### New: `VULNERABILITIES.md` — Full Vulnerability Reference for Blue Team VMs
