@@ -569,7 +569,14 @@ def main():
             except ValueError:
                 orders = []
             if not orders:
-                return skip("admin has no orders to probe with (checkout would modify data)")
+                # No order to probe with, and a checkout would write data: inspect the deployed handler instead.
+                r = ssh_root(PENGUIN, "grep -n \"order_number = ?\" /opt/crazyrhino/backend/routes/orders.js")
+                if r is None:
+                    return skip("no orders to probe with and sshpass not installed")
+                lines = [l for l in r[1].splitlines() if "order_number = ?" in l and "SELECT" in l]
+                if lines and all("user_id" not in l for l in lines):
+                    return ok("deployed GET /:orderNumber looks orders up with no user_id filter (source check)")
+                return bad("order lookup is filtered by owner: " + " | ".join(lines)[:100] if lines else "could not find order lookup")
             num = orders[0]["order_number"]
             st, _, _ = http_req(PENGUIN, 5000, f"/api/orders/{num}", headers={"Authorization": f"Bearer {jt}"})
             return ok(f"johndoe read admin order {num}") if st == 200 else bad(f"HTTP {st} for another user's order")
