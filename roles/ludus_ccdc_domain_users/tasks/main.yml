@@ -63,12 +63,14 @@
 
 - name: "Create domainadmin account and add to Domain Admins"
   ansible.windows.win_powershell:
+    error_action: stop
     script: |
       $domain = "zooland.local"
       $pass = ConvertTo-SecureString "ZooTime!" -AsPlainText -Force
       $existing = Get-ADUser -Filter "SamAccountName -eq 'domainadmin'" -ErrorAction SilentlyContinue
       if (-not $existing) {
         New-ADUser `
+          -Name              "Domain Admin" `
           -SamAccountName    "domainadmin" `
           -UserPrincipalName "domainadmin@$domain" `
           -GivenName         "Domain" `
@@ -89,6 +91,7 @@
 
 - name: "Create ZooLand Inc. domain user accounts"
   ansible.windows.win_powershell:
+    error_action: stop
     script: |
       $domain = "zooland.local"
       $users = @(
@@ -113,6 +116,7 @@
         $existing = Get-ADUser -Filter "SamAccountName -eq '$($u.SamAccountName)'" -ErrorAction SilentlyContinue
         if (-not $existing) {
           New-ADUser `
+            -Name                 "$($u.GivenName) $($u.Surname)" `
             -SamAccountName       $u.SamAccountName `
             -UserPrincipalName    "$($u.SamAccountName)@$domain" `
             -GivenName            $u.GivenName `
@@ -131,6 +135,7 @@
 
 - name: "Create additional domain user accounts with individual passwords"
   ansible.windows.win_powershell:
+    error_action: stop
     script: |
       $domain = "zooland.local"
       # Each entry has its own password — 5 are weak (plain wordlists), 6 are mid-strength (require rules)
@@ -153,6 +158,7 @@
         $pass = ConvertTo-SecureString $u.Password -AsPlainText -Force
         if (-not $existing) {
           New-ADUser `
+            -Name                 "$($u.GivenName) $($u.Surname)" `
             -SamAccountName       $u.SamAccountName `
             -UserPrincipalName    "$($u.SamAccountName)@$domain" `
             -GivenName            $u.GivenName `
