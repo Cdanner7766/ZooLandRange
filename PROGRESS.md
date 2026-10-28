@@ -1,0 +1,40 @@
+# PROGRESS
+
+## Current step
+Cycle 2: re-running `ludus range deploy -t user-defined-roles` after DNS fix (commit 223051d).
+
+## Done
+- Read CLAUDE.md + README.md; wrote tests/check.py (commit 1f415cf). Not yet run against the range.
+- Git identity set repo-local: Claude <noreply@anthropic.com>.
+- Preflight: all 5 required templates BUILT; all ludus_ccdc_* roles registered; range config set from range-config.yaml.
+
+## Decisions
+- Range ID is CLAUDEAGENT, network 10.1.0.0/16 (X=1).
+- check.py SKIPs checks whose tool is missing; use `--strict` for the definition-of-done run.
+
+## Next
+- When deploy ends: `ludus range errors`, `ludus range logs`, then `python3 tests/check.py` (from JAGUAR via qm guest exec or direct if routable).
+
+## Findings
+- Cycle 1 (full deploy, ~03:50-05:15) ended ERROR. Root cause: Ludus router AdGuard DNS (10.1.10.254) is unreachable from range VMs because Ludus default rule `-s 10.1.0.0/16 -d 10.0.0.0/8 REJECT` also hits INPUT to the router. apt hung on PENGUIN; FLAMINGO/HIPPO failed Ludus's python3-apt prereq; PENGUIN apt cache update failed. ZEBRA WinRM error was rescued (not a failure).
+- Fix: first task in every Linux role sets 1.1.1.1/8.8.8.8 (commit 223051d). Also set live on the 6 Linux VMs via qm guest exec. Not touching Ludus/router config.
+- LESSON: `ludus ansible role add -d` does NOT overwrite a registered role; always use `-f`.
+- Access: `sudo qm guest exec <vmid> --timeout 30 -- /bin/bash -c '...'` works (vmids 113 router,114 GIRAFFE,115 MEERKAT,116 ZEBRA,117 PENGUIN,118 OTTER,119 FLAMINGO,120 HIPPO,121 JAGUAR,122 SCORESVR).
+
+## BLOCKED
+- None. (ludus_ccdc_blueteam_access was blocked on admin-only pveum; resolved by the user running the steps manually as admin, see Log.)
+
+## Log
+- 03:50 full deploy started.
+- ~05:20 cycle 1 ended ERROR (DNS). Fix committed 223051d; roles re-registered; starting roles redeploy.
+- 05:25 roles re-added with -f (DNS task + frontend ESLint fix 1e6ded7); redeploying roles.
+- 05:28 GIRAFFE found powered off (unknown cause); ludus power on. FLAMINGO/HIPPO still on DHCP IPs (.212/.180) -> need full deploy.
+- 06:25 full deploy: only SCORESVR failed (pip DNS). Ludus re-applies router DNS via /etc/network/interfaces + resolved.conf; role now edits both (commit after 1e6ded7). Redeploying roles.
+- 06:27 roles redeploy: DNS fix confirmed; only error left is the BLOCKED blueteam_access role. Next: run tests/check.py.
+- 06:50 First check.py run: 625/900. Fixes: GIRAFFE New-ADUser -Name (588f3ea), ZEBRA SMB1 reboot, FLAMINGO postfix 'permit, reject', OTTER chown root /srv/ftp. HIPPO test DB: role uses testuser not anon ''@'%' (doc mismatch; left as is, test accepts either). Next: force re-add roles, redeploy roles, rerun check.
+- 06:55 check run 2: 775/900, vulns 29/31. Left: SMTP timeout (FLAMINGO), RDP jsmith auth rejected, IDOR skip (no orders).
+- 07:05 RDP: engine CredSSP pubKeyAuth was unsealed -> correct creds got TLS alert. Implemented NTLM sealing in scoring_engine/checks.py (+role copy). Verified from host: jsmith OK, wrong pw fails. NLA experiment on MEERKAT reverted to 0. FLAMINGO postfix needs 'permit_mynetworks, reject_unauth_destination' (60fe1a1). Redeploying roles.
+- 07:20 ROOT CAUSE of engine 0/15 + router DNS: range-config always_blocked_networks 10.0.0.0/8 includes own 10.1.0.0/16; Ludus emits it before user rules. Replaced by 10/8 minus 10.1/16. Applying with deploy -t network.
+- 07:35 DONE except BLOCKED pveum. check.py --strict exit 0 (900/900, 31/31). Engine dashboard 15/15 UP. REPORT.md written.
+- Later: user ran pveum steps as admin on the Proxmox host. User BlueTeam@pve created. `pvesh set /pools/ZooLand-BlueTeam -vms ...` failed: "VM 114 belongs already to pool 'CLAUDEAGENT' and 'allow-move' is not set" (a VM can be in one pool only; moving would risk the Ludus user's access). Decision: grant PVEVMUser per VM (/vms/114-120) instead. Verified via `pveum acl list`. Role rewritten to do the same (no pool); README/SETUP/ARCHITECTURE updated. The empty ZooLand-BlueTeam pool left on the host is unused (pveum pool delete ZooLand-BlueTeam to remove).
+- Not re-run: the rewritten role has not been deployed (non-admin cannot run it); it mirrors the commands that worked manually.
