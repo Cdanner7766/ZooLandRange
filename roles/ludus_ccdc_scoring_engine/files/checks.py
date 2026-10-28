@@ -526,7 +526,7 @@ def _hmac_sha256(key, msg): return _hmac_mod.new(key, msg, hashlib.sha256).diges
 
 
 def _ntlm_negotiate() -> bytes:
-    flags = (0x00000001|0x00000200|0x00008000|0x00020000|
+    flags = (0x00000001|0x00000010|0x00000020|0x00000200|0x00008000|0x00020000|
              0x00080000|0x20000000|0x40000000|0x80000000)
     return (b"NTLMSSP\x00" + struct.pack("<I", 1) + struct.pack("<I", flags)
             + b"\x00"*8 + b"\x00"*8 + b"\x06\x01\x00\x00\x00\x00\x00\x0f")
@@ -543,7 +543,8 @@ def _ntlm_authenticate(domain, user, password, server_challenge, target_info):
     sbk = _hmac_md5(rk, nt_proof)
     esk = os.urandom(16)
     enc_esk = _rc4(sbk, esk)
-    flags = 0x00000001|0x00000200|0x00008000|0x00020000|0x00080000|0x20000000|0x40000000|0x80000000
+    flags = (0x00000001|0x00000010|0x00000020|0x00000200|0x00008000|0x00020000|
+             0x00080000|0x20000000|0x40000000|0x80000000)
     domain_b = domain.encode("utf-16-le"); user_b = user.encode("utf-16-le")
     ws_b = b"KALI\x00\x00\x00\x00"; lm = b"\x00"*24
     off = 88
@@ -556,9 +557,62 @@ def _ntlm_authenticate(domain, user, password, server_challenge, target_info):
     return msg, esk
 
 
+def _rc4_stream(key):
+    """RC4 whose state persists across calls (NTLM sealing encrypts data, then the checksum, on one stream)."""
+    S = list(range(256)); j = 0
+    for i in range(256):
+        j = (j + S[i] + key[i % len(key)]) % 256
+        S[i], S[j] = S[j], S[i]
+    st = [0, 0]
+    def crypt(data):
+        out = bytearray(); i, j = st
+        for b in data:
+            i = (i+1) % 256; j = (j+S[i]) % 256; S[i], S[j] = S[j], S[i]
+            out.append(b ^ S[(S[i]+S[j]) % 256])
+        st[0], st[1] = i, j
+        return bytes(out)
+    return crypt
+
+
+def _ntlm_seal(exported_key, data):
+    """NTLM v2 session-security seal (client->server, seqnum 0): 16-byte signature + RC4(data)."""
+    seal_key = hashlib.md5(exported_key + b"session key to client-to-server sealing key magic constant\x00").digest()
+    sign_key = hashlib.md5(exported_key + b"session key to client-to-server signing key magic constant\x00").digest()
+    rc4 = _rc4_stream(seal_key)
+    enc = rc4(data)
+    chk = rc4(_hmac_md5(sign_key, struct.pack("<I", 0) + data)[:8])
+    return struct.pack("<I", 1) + chk + struct.pack("<I", 0) + enc
+
+
+def _der_tlv(buf, pos):
+    """Return (tag, content_start, content_end) of the DER element at pos."""
+    tag = buf[pos]; ln = buf[pos+1]; hdr = 2
+    if ln & 0x80:
+        n = ln & 0x7F; ln = int.from_bytes(buf[pos+2:pos+2+n], "big"); hdr = 2 + n
+    return tag, pos + hdr, pos + hdr + ln
+
+
+def _cert_subject_public_key(cert_der):
+    """Contents of the SubjectPublicKey BIT STRING of an X.509 certificate (what CredSSP binds to)."""
+    _, c0, _ = _der_tlv(cert_der, 0)                 # Certificate
+    _, t0, _ = _der_tlv(cert_der, c0)                # TBSCertificate
+    pos = t0
+    tag, s_, e_ = _der_tlv(cert_der, pos)
+    if tag == 0xA0:                                   # explicit version
+        pos = e_
+    for _ in range(5):                                # serial, sigAlg, issuer, validity, subject
+        _, _, pos = _der_tlv(cert_der, pos)
+    _, spki, _ = _der_tlv(cert_der, pos)              # SubjectPublicKeyInfo
+    _, _, pos = _der_tlv(cert_der, spki)              # skip AlgorithmIdentifier
+    _, bs, be = _der_tlv(cert_der, pos)               # BIT STRING
+    return cert_der[bs+1:be]                          # drop the unused-bits byte
+
+
 def _credssp_pub_key_auth(session_key, cert_der, client_nonce):
-    bk = _hmac_sha256(session_key, b"CredSSP Client-To-Server Binding Hash\x00")
-    return _hmac_sha256(bk, hashlib.sha256(cert_der).digest() + client_nonce)
+    """CredSSP v5/6 client pubKeyAuth: NTLM-sealed SHA256("...Client-To-Server Binding Hash\\0" + nonce + pubkey)."""
+    h = hashlib.sha256(b"CredSSP Client-To-Server Binding Hash\x00" + client_nonce
+                       + _cert_subject_public_key(cert_der)).digest()
+    return _ntlm_seal(session_key, h)
 
 
 def _der_len(n):
@@ -573,10 +627,10 @@ def _ts_req1(ntlm_neg, nonce):
     nego = _tlv(0xA1, _tlv(0x30, _tlv(0x30, _tlv(0xA0, _tlv(0x04, ntlm_neg)))))
     return _tlv(0x30, ver + nego + _tlv(0xA5, _tlv(0x04, nonce)))
 
-def _ts_req3(ntlm_auth, pka):
+def _ts_req3(ntlm_auth, pka, nonce):
     ver = _tlv(0xA0, _tlv(0x02, b"\x06"))
     nego = _tlv(0xA1, _tlv(0x30, _tlv(0x30, _tlv(0xA0, _tlv(0x04, ntlm_auth)))))
-    return _tlv(0x30, ver + nego + _tlv(0xA3, _tlv(0x04, pka)))
+    return _tlv(0x30, ver + nego + _tlv(0xA3, _tlv(0x04, pka)) + _tlv(0xA5, _tlv(0x04, nonce)))
 
 def _read_der(sock):
     hdr = b""
@@ -639,7 +693,7 @@ def check_rdp_login(host, port, domain, user, password):
         target_info = chal[ti_off:ti_off+ti_len]
         auth_msg, session_key = _ntlm_authenticate(domain, user, password, srv_chal, target_info)
         pka = _credssp_pub_key_auth(session_key, cert, nonce)
-        tls.sendall(_ts_req3(auth_msg, pka))
+        tls.sendall(_ts_req3(auth_msg, pka, nonce))
         try:
             tls.settimeout(6)
             ts4 = _read_der(tls)
