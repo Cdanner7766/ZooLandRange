@@ -172,7 +172,7 @@ ludus range deploy -t user-defined-roles
 | `ludus_ccdc_scoring_engine` | SCORESVR | Ubuntu 22.04 | Flask scoring engine + SQLite + systemd | 8080 |
 | `ludus_ccdc_domain_users` | GIRAFFE | Windows Server 2022 | Creates ZooLand Inc. employee AD accounts + DNS A records + DNS vulns | 53 |
 | `ludus_ccdc_kali_setup` | JAGUAR | Kali Linux | Installs targeted CCDC red-team tools from `archive-4.kali.org` | — |
-| `ludus_ccdc_blueteam_access` | SCORESVR | — | Creates `BlueTeam@pve` Proxmox user, `ZooLand-BlueTeam` pool, grants `PVEVMUser` on pool | — |
+| `ludus_ccdc_blueteam_access` | SCORESVR | — | Creates `BlueTeam@pve` Proxmox user, grants `PVEVMUser` on each of the 7 blue team VMs | — |
 
 ## Updating a Role
 

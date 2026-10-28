@@ -433,11 +433,10 @@ The `ludus_ccdc_blueteam_access` role runs at the end of deployment (assigned to
 |------|-------|
 | Proxmox user | `BlueTeam@pve` |
 | Password | `BlueTeam` |
-| Pool | `ZooLand-BlueTeam` |
-| Pool members | GIRAFFE, MEERKAT, ZEBRA, PENGUIN, OTTER, FLAMINGO, HIPPO |
+| VMs (per-VM ACL) | GIRAFFE, MEERKAT, ZEBRA, PENGUIN, OTTER, FLAMINGO, HIPPO |
 | Permission | `PVEVMUser` — start, stop, reboot, console access; no config or snapshot changes |
 
-Blue team members can log in to the Proxmox web UI at `https://<ludus-host-ip>:8006` with `BlueTeam@pve` / `BlueTeam` and access the console of any VM in the pool.
+Blue team members can log in to the Proxmox web UI at `https://<ludus-host-ip>:8006` with `BlueTeam@pve` / `BlueTeam` and access the console of any of those VMs.
 
 **Scoring Engine:**
 

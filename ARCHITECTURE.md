@@ -160,7 +160,7 @@ Each role is a self-contained Ansible role that configures one service and inten
 | `ludus_ccdc_scoring_engine` | SCORESVR | Deploys Flask scoring engine as systemd service; installs Python venv + dependencies; configures SQLite database |
 | `ludus_ccdc_kali_setup` | JAGUAR | Installs targeted CCDC red-team tools via apt from `archive-4.kali.org` (avoids kali-linux-default CDN failures) |
 | `ludus_ubuntu_desktop` | SCORESVR | Installs XFCE4 desktop environment so SCORESVR can display the scoring dashboard via browser |
-| `ludus_ccdc_blueteam_access` | SCORESVR (runs once, delegates to Proxmox host) | Creates `BlueTeam@pve` Proxmox user, `ZooLand-BlueTeam` pool, adds the 7 blue team VMs to the pool, and grants `PVEVMUser` (start/stop/console) on the pool |
+| `ludus_ccdc_blueteam_access` | SCORESVR (runs once, delegates to Proxmox host) | Creates `BlueTeam@pve` Proxmox user, and grants `PVEVMUser` (start/stop/console) on each of the 7 blue team VMs (per-VM ACL; the VMs already sit in the Ludus user pool, so they cannot also join a second pool) |
 
 ### Role File Structure
 
@@ -314,7 +314,7 @@ ZooLandRange/
 │   ├── ludus_ccdc_scoring_engine/  Flask scoring engine (SCORESVR)
 │   ├── ludus_ccdc_kali_setup/      Kali tool metapackage (JAGUAR)
 │   ├── ludus_ubuntu_desktop/       XFCE desktop (SCORESVR)
-│   └── ludus_ccdc_blueteam_access/ Proxmox BlueTeam user + pool (delegates to Proxmox host)
+│   └── ludus_ccdc_blueteam_access/ Proxmox BlueTeam user + per-VM ACLs (delegates to Proxmox host)
 │
 ├── scoring_engine/            ← Canonical scoring engine Python source
 │   ├── app.py                 Flask web app + REST API

@@ -5,10 +5,7 @@
 blueteam_proxmox_user: "BlueTeam@pve"
 blueteam_proxmox_password: "BlueTeam"
 
-# Proxmox pool name for all blue team VMs
-blueteam_pool_name: "ZooLand-BlueTeam"
-
-# VMs to add to the pool. Excludes JAGUAR (red team) and SCORESVR (admin infra).
+# VMs that get PVEVMUser. Excludes JAGUAR (red team) and SCORESVR (admin infra).
 # range_id is set automatically by Ludus for each deployment.
 blueteam_vm_names:
   - "{{ range_id }}-GIRAFFE"

@@ -2,16 +2,6 @@
 # All tasks delegate to localhost (the Proxmox host). Uses pveum/pvesh CLI — no
 # API credentials required when running as root on the Proxmox node.
 
-- name: "Create {{ blueteam_pool_name }} Proxmox pool"
-  ansible.builtin.command: >-
-    pveum pool add {{ blueteam_pool_name }}
-    --comment "Blue team VMs - ZooLand CCDC range"
-  delegate_to: localhost
-  run_once: true
-  register: pool_create
-  failed_when: pool_create.rc != 0 and 'already exists' not in (pool_create.stderr + pool_create.stdout)
-  changed_when: pool_create.rc == 0
-
 - name: "Create {{ blueteam_proxmox_user }} Proxmox user"
   ansible.builtin.command: >-
     pveum user add {{ blueteam_proxmox_user }}
@@ -43,22 +33,15 @@
   delegate_to: localhost
   run_once: true
 
-- name: "Add blue team VMs to {{ blueteam_pool_name }} pool"
+# VMs already belong to the Ludus per-user pool (a VM can only be in one pool, and
+# moving them would break the Ludus user's access), so grant access per VM instead.
+- name: "Grant PVEVMUser to {{ blueteam_proxmox_user }} on each blue team VM"
   ansible.builtin.command: >-
-    pvesh set /pools/{{ blueteam_pool_name }}
-    -vms {{ blueteam_vmids | join(',') }}
-  delegate_to: localhost
-  run_once: true
-  when: blueteam_vmids | length > 0
-  register: pool_member
-  changed_when: pool_member.rc == 0
-
-- name: "Grant PVEVMUser to {{ blueteam_proxmox_user }} on {{ blueteam_pool_name }} pool"
-  ansible.builtin.command: >-
-    pveum acl modify /pool/{{ blueteam_pool_name }}
+    pveum acl modify /vms/{{ item }}
     --users {{ blueteam_proxmox_user }}
     --roles PVEVMUser
   delegate_to: localhost
   run_once: true
+  loop: "{{ blueteam_vmids }}"
   register: acl_grant
   changed_when: acl_grant.rc == 0
