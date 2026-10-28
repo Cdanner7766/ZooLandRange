@@ -238,8 +238,20 @@ ludus:
 
 network:
   inter_vlan_default: REJECT
+  # Ludus emits these as REJECT rules ahead of the user rules below, so a plain
+  # 10.0.0.0/8 also blocks this range's own 10.1.0.0/16 (VLAN 99 -> VLAN 10 and
+  # every VM -> router DNS were rejected). These CIDRs cover all of 10.0.0.0/8
+  # EXCEPT 10.1.0.0/16 (range number 1); if the range number changes, regenerate
+  # them to exclude 10.<X>.0.0/16 instead.
   always_blocked_networks:
-    - 10.0.0.0/8
+    - 10.0.0.0/16
+    - 10.2.0.0/15
+    - 10.4.0.0/14
+    - 10.8.0.0/13
+    - 10.16.0.0/12
+    - 10.32.0.0/11
+    - 10.64.0.0/10
+    - 10.128.0.0/9
     - 172.16.0.0/12
     - 192.168.0.0/16
   rules:
