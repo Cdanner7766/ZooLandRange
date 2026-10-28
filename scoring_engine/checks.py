@@ -768,8 +768,8 @@ def run_check(service):
         return check_rdp_login(
             host, port,
             service.get("rdp_domain", "ludus"),
-            eff_user or service.get("default_user", "jsmith"),
-            eff_pass or service.get("default_pass", ""),
+            eff_user,
+            eff_pass or "",
         )
     elif ctype == "ssh":
         return check_ssh(host, port)

@@ -251,11 +251,11 @@ sudo journalctl -u scoring_engine -f
 | DNS — Resolution | GIRAFFE | .7 | 53 | A record query for `web.zooland.local` | 100 |
 | SMTP — Mail relay | FLAMINGO | .38 | 25 | 220 banner + EHLO 250 validation | 75 |
 | MySQL — Database | HIPPO | .41 | 3306 | MySQL handshake banner | 75 |
-| IMAP — Mail login (`jsmith`) | FLAMINGO | .38 | 143 | IMAP LOGIN command | 50 |
+| IMAP — Mail login (rotates `jsmith`, `bwilson`, `mchen`) | FLAMINGO | .38 | 143 | IMAP LOGIN command | 50 |
 | POP3 — Mail | FLAMINGO | .38 | 110 | `+OK` banner | 50 |
 | SMB — File Server | ZEBRA | .15 | 445 | SMBv1/v2 negotiate | 50 |
-| FTP — Login (`mlopez`) | OTTER | .29 | 21 | FTP authenticated login | 50 |
-| RDP — Workstation | MEERKAT | .12 | 3389 | CredSSP/NLA login (NTLMv2) | 50 |
+| FTP — Login (rotates `mlopez`, `rthomas`) | OTTER | .29 | 21 | FTP authenticated login | 50 |
+| RDP — Workstation | MEERKAT | .12 | 3389 | CredSSP/NLA login (NTLMv2; rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`) | 50 |
 | **Total max per round** | | | | | **800** |
 
 ## Step 6: Validate the Deployment

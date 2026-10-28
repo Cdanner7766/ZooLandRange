@@ -42,6 +42,14 @@ def init_db():
                 password   TEXT NOT NULL
             );
 
+            -- one password override per rotation account
+            CREATE TABLE IF NOT EXISTS service_user_credentials (
+                service_id TEXT NOT NULL,
+                username   TEXT NOT NULL,
+                password   TEXT NOT NULL,
+                PRIMARY KEY (service_id, username)
+            );
+
             CREATE INDEX IF NOT EXISTS idx_sc_round   ON service_checks(round_id);
             CREATE INDEX IF NOT EXISTS idx_sc_service ON service_checks(service_id);
         """)
@@ -149,6 +157,37 @@ def set_credential(svc_id, username, password):
             ON CONFLICT(service_id) DO UPDATE
               SET username = excluded.username,
                   password = excluded.password
+            """,
+            (svc_id, username, password),
+        )
+
+
+def get_user_passwords(svc_id):
+    """Return {username: password} overrides stored for a rotation service.
+
+    Also honours the legacy single-account row in service_credentials.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT username, password FROM service_user_credentials WHERE service_id = ?",
+            (svc_id,),
+        ).fetchall()
+    out = {r["username"]: r["password"] for r in rows}
+    legacy_user, legacy_pass = get_credential(svc_id)
+    if legacy_user and legacy_user not in out:
+        out[legacy_user] = legacy_pass
+    return out
+
+
+def set_user_password(svc_id, username, password):
+    """Insert or update the password override for one rotation account."""
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO service_user_credentials (service_id, username, password)
+            VALUES (?, ?, ?)
+            ON CONFLICT(service_id, username) DO UPDATE
+              SET password = excluded.password
             """,
             (svc_id, username, password),
         )

@@ -301,25 +301,16 @@
       </div>
       <div class="modal-body">
         <p style="font-size:.82rem; color:#8b949e; margin-bottom:1rem;">
-          New credentials will be used on the next check round. The previous password is not shown.
+          The engine rotates through these accounts, one per check round. Enter a new password for
+          each account whose password changed; blank fields are left as they are. New passwords are
+          used from the next round. Current passwords are not shown.
         </p>
-        <div class="mb-3">
-          <label for="cred-username" class="form-label" style="font-size:.85rem;">Username</label>
-          <input type="text" id="cred-username" class="form-control"
-                 style="background:#0d1117; color:#e6edf3; border-color:#30363d;"
-                 autocomplete="off" spellcheck="false">
-        </div>
-        <div class="mb-3">
-          <label for="cred-password" class="form-label" style="font-size:.85rem;">Password</label>
-          <input type="password" id="cred-password" class="form-control"
-                 style="background:#0d1117; color:#e6edf3; border-color:#30363d;"
-                 autocomplete="new-password" placeholder="Enter new password">
-        </div>
+        <div id="cred-rows"></div>
         <div id="cred-status" style="font-size:.83rem; min-height:1.2em;"></div>
       </div>
       <div class="modal-footer" style="border-color:#30363d;">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="saveCredentials()">Save Credentials</button>
+        <button type="button" class="btn btn-primary" onclick="saveCredentials()">Save Passwords</button>
       </div>
     </div>
   </div>
@@ -350,13 +341,31 @@ let _credModalInstance = null;
 function openCredModal(svcId, svcName) {
   _credSvcId = svcId;
   document.getElementById('cred-svc-name').textContent = svcName;
-  document.getElementById('cred-username').value = '';
-  document.getElementById('cred-password').value = '';
   document.getElementById('cred-status').textContent = '';
-  // Pre-fill current username (password is never returned)
+  const rows = document.getElementById('cred-rows');
+  rows.textContent = '';
+  // One password field per rotation account (passwords are never returned)
   fetch('/api/credentials/' + svcId)
     .then(r => r.json())
-    .then(d => { document.getElementById('cred-username').value = d.username || ''; })
+    .then(d => {
+      (d.users || []).forEach(u => {
+        const wrap = document.createElement('div');
+        wrap.className = 'mb-3';
+        const label = document.createElement('label');
+        label.className = 'form-label';
+        label.style.fontSize = '.85rem';
+        label.textContent = u;
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.className = 'form-control cred-pw';
+        input.dataset.user = u;
+        input.style.cssText = 'background:#0d1117; color:#e6edf3; border-color:#30363d;';
+        input.autocomplete = 'new-password';
+        input.placeholder = 'New password for ' + u;
+        wrap.append(label, input);
+        rows.appendChild(wrap);
+      });
+    })
     .catch(() => {});
   if (!_credModalInstance) {
     _credModalInstance = new bootstrap.Modal(document.getElementById('credModal'));
@@ -365,33 +374,31 @@ function openCredModal(svcId, svcName) {
 }
 
 async function saveCredentials() {
-  const username = document.getElementById('cred-username').value.trim();
-  const password = document.getElementById('cred-password').value;
   const statusEl = document.getElementById('cred-status');
-  if (!username || !password) {
+  const inputs = Array.from(document.querySelectorAll('#cred-rows .cred-pw'))
+    .filter(i => i.value);
+  if (!inputs.length) {
     statusEl.style.color = '#f85149';
-    statusEl.textContent = 'Both username and password are required.';
+    statusEl.textContent = 'Enter a password for at least one account.';
     return;
   }
-  try {
-    const resp = await fetch('/api/credentials/' + _credSvcId, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await resp.json();
-    if (resp.ok && data.ok) {
-      statusEl.style.color = '#3fb950';
-      statusEl.textContent = 'Saved. New credentials will be used on the next check round.';
-      document.getElementById('cred-password').value = '';
-    } else {
-      statusEl.style.color = '#f85149';
-      statusEl.textContent = data.error || 'Save failed.';
+  const saved = [], failed = [];
+  for (const input of inputs) {
+    try {
+      const resp = await fetch('/api/credentials/' + _credSvcId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: input.dataset.user, password: input.value }),
+      });
+      const data = await resp.json();
+      if (resp.ok && data.ok) { saved.push(input.dataset.user); input.value = ''; }
+      else failed.push(input.dataset.user + ': ' + (data.error || 'save failed'));
+    } catch (e) {
+      failed.push(input.dataset.user + ': ' + e);
     }
-  } catch (e) {
-    statusEl.style.color = '#f85149';
-    statusEl.textContent = 'Request failed: ' + e;
   }
+  statusEl.style.color = failed.length ? '#f85149' : '#3fb950';
+  statusEl.textContent = (saved.length ? 'Saved: ' + saved.join(', ') + '. ' : '') + failed.join('; ');
 }
 
 // ── Clear history button ──────────────────────────────────────────────────

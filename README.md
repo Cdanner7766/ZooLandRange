@@ -70,11 +70,11 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Display Name | Username | Password | Department |
 |-------------|----------|----------|------------|
-| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(IMAP scoring + RDP scoring account)* |
-| Barbara Wilson | `bwilson` | `ZooLand2025!` | HR |
-| Michelle Chen | `mchen` | `ZooLand2025!` | Finance |
-| Maria Lopez | `mlopez` | `ZooLand2025!` | Logistics *(FTP scoring account on OTTER)* |
-| Robert Thomas | `rthomas` | `ZooLand2025!` | Warehouse |
+| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(IMAP + RDP scoring rotation)* |
+| Barbara Wilson | `bwilson` | `ZooLand2025!` | HR *(IMAP + RDP scoring rotation)* |
+| Michelle Chen | `mchen` | `ZooLand2025!` | Finance *(IMAP + RDP scoring rotation)* |
+| Maria Lopez | `mlopez` | `ZooLand2025!` | Logistics *(FTP + RDP scoring rotation)* |
+| Robert Thomas | `rthomas` | `ZooLand2025!` | Warehouse *(FTP + RDP scoring rotation)* |
 | Alex Johnson | `ajohnson` | `ZooLand2025!` | Marketing |
 | Thomas Lee | `tlee` | `ZooLand2025!` | Operations |
 | Sarah Williams | `swilliams` | `ZooLand2025!` | Veterinary |
@@ -268,8 +268,8 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS root | `root` | `ZooTime!` | VULN: weak root |
 | FTP anonymous | `anonymous` | (any password) | VULN: anonymous upload |
 | Ludus default | `debian` | `debian` | |
-| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP account** |
-| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | |
+| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP + RDP rotation** |
+| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | **Scoring engine FTP + RDP rotation** |
 
 **FTP Directory Structure:**
 
@@ -320,9 +320,9 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS / mail user | `user` | `password` | VULN: weak account |
 | OS root | `root` | `ZooTime!` | VULN: weak root |
 | Ludus default | `debian` | `debian` | |
-| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine IMAP account** |
-| Employee (HR) | `bwilson` | `ZooLand2025!` | |
-| Employee (Finance) | `mchen` | `ZooLand2025!` | |
+| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine IMAP + RDP rotation** |
+| Employee (HR) | `bwilson` | `ZooLand2025!` | **Scoring engine IMAP + RDP rotation** |
+| Employee (Finance) | `mchen` | `ZooLand2025!` | **Scoring engine IMAP + RDP rotation** |
 
 **Vulnerabilities:**
 
