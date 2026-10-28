@@ -24,11 +24,13 @@ import io
 import json
 import os
 import re
+import shlex
 import shutil
 import socket
 import struct
 import subprocess
 import sys
+import hashlib
 
 TIMEOUT = 6
 ROOT_PW = "ZooTime!"
@@ -105,42 +107,111 @@ def run(cmd, timeout=20, inp=None):
     return p.returncode, (p.stdout + p.stderr)
 
 
-def ssh(host, user, pw, cmd):
-    """Run a command over SSH with a password. Returns (rc, output) or None if no sshpass."""
-    if not have("sshpass"):
-        return None
-    return run(["sshpass", "-p", pw, "ssh", "-o", "StrictHostKeyChecking=no",
-                "-o", "UserKnownHostsFile=/dev/null", "-o", "ConnectTimeout=6",
-                f"{user}@{host}", cmd], timeout=30)
+SSH_USERS = (("localuser", "password"), ("debian", "debian"))  # Ludus default account, passwordless sudo
 
 
 def ssh_root(host, cmd):
-    return ssh(host, "root", ROOT_PW, cmd)
+    """Run cmd as root over SSH (Ludus default user + sudo). Returns (rc, output) or None if no sshpass.
+    sshd's default PermitRootLogin refuses the documented root password, so root@ SSH is not used."""
+    if not have("sshpass"):
+        return None
+    out = ""
+    for user, pw in SSH_USERS:
+        rc, out = run(["sshpass", "-p", pw, "ssh", "-o", "StrictHostKeyChecking=no",
+                       "-o", "UserKnownHostsFile=/dev/null", "-o", "ConnectTimeout=6", "-o", "LogLevel=ERROR",
+                       f"{user}@{host}", "sudo -n sh -c " + shlex.quote(cmd)], timeout=30)
+        if "Permission denied" not in out:
+            return rc, out
+    return 255, out
 
 
-def mysql_cmd():
-    return "mysql" if have("mysql") else ("mariadb" if have("mariadb") else None)
+def _recv_exact(sock, n):
+    buf = b""
+    while len(buf) < n:
+        chunk = sock.recv(n - len(buf))
+        if not chunk:
+            raise ConnectionError("connection closed")
+        buf += chunk
+    return buf
+
+
+def _mysql_packet(sock):
+    hdr = _recv_exact(sock, 4)
+    return hdr[3], _recv_exact(sock, int.from_bytes(hdr[:3], "little"))
+
+
+def _lenenc(buf, pos):
+    b = buf[pos]
+    if b < 0xFB:
+        return b, pos + 1
+    if b == 0xFB:
+        return None, pos + 1
+    n = {0xFC: 2, 0xFD: 3, 0xFE: 8}[b]
+    return int.from_bytes(buf[pos + 1:pos + 1 + n], "little"), pos + 1 + n
 
 
 def mysql_q(host, user, pw, sql, db=None):
-    exe = mysql_cmd()
-    if not exe:
-        return None
-    cmd = [exe, f"-h{host}", f"-u{user}", f"-p{pw}", "--connect-timeout=6", "-N", "-B", "-e", sql]
-    if db:
-        cmd.insert(-2, db)
-    return run(cmd)
+    """Minimal MySQL/MariaDB client (mysql_native_password). Returns (rc, text); text is the rows, tab-separated."""
+    with socket.create_connection((host, 3306), TIMEOUT) as s:
+        s.settimeout(TIMEOUT)
+        _, hs = _mysql_packet(s)
+        if hs[0] != 10:
+            return 1, f"unexpected protocol {hs[0]}"
+        pos = hs.index(b"\0", 1) + 1 + 4
+        salt = hs[pos:pos + 8]
+        pos += 8 + 1 + 2 + 1 + 2 + 2
+        alen = hs[pos]
+        pos += 1 + 10
+        salt += hs[pos:pos + max(13, alen - 8)][:12]
+        sha = lambda d: hashlib.sha1(d).digest()
+        token = b"" if not pw else bytes(a ^ b for a, b in zip(sha(pw.encode()), sha(salt + sha(sha(pw.encode())))))
+        caps = 0x1 | 0x200 | 0x8000 | 0x80000 | (0x8 if db else 0)
+        resp = struct.pack("<IIB23x", caps, 1 << 24, 33) + user.encode() + b"\0" + bytes([len(token)]) + token
+        resp += (db.encode() + b"\0" if db else b"") + b"mysql_native_password\0"
+        s.sendall(len(resp).to_bytes(3, "little") + b"\x01" + resp)
+        _, r = _mysql_packet(s)
+        if r[0] == 0xFF:
+            return 1, r[9:].decode(errors="replace")
+        if r[0] != 0x00:
+            return 1, f"auth not completed (plugin switch?): {r[1:30]!r}"
+        q = b"\x03" + sql.encode()
+        s.sendall(len(q).to_bytes(3, "little") + b"\x00" + q)
+        _, r = _mysql_packet(s)
+        if r[0] == 0xFF:
+            return 1, r[9:].decode(errors="replace")
+        if r[0] == 0x00:
+            return 0, ""
+        ncols, _ = _lenenc(r, 0)
+        for _ in range(ncols):
+            _mysql_packet(s)
+        _mysql_packet(s)  # EOF after column defs
+        rows = []
+        while True:
+            _, r = _mysql_packet(s)
+            if r[0] == 0xFE and len(r) < 9:
+                break
+            if r[0] == 0xFF:
+                return 1, r[9:].decode(errors="replace")
+            pos, row = 0, []
+            for _ in range(ncols):
+                ln, pos = _lenenc(r, pos)
+                row.append("NULL" if ln is None else r[pos:pos + ln].decode(errors="replace"))
+                pos += ln or 0
+            rows.append("\t".join(row))
+        return 0, "\n".join(rows)
 
 
 def winrm(host, user, pw, ps):
+    """Run PowerShell over WinRM (HTTPS 5986, as Ludus configures it). Returns (rc, stdout) or None without pywinrm."""
     try:
         import winrm as _w
     except ImportError:
         return None
     try:
-        s = _w.Session(f"http://{host}:5985/wsman", auth=(user, pw), transport="ntlm")
-        r = s.run_ps(ps)
-        return r.status_code, r.std_out.decode(errors="replace") + r.std_err.decode(errors="replace")
+        sess = _w.Session(f"https://{host}:5986/wsman", auth=(user, pw), transport="ntlm",
+                          server_cert_validation="ignore", operation_timeout_sec=20, read_timeout_sec=30)
+        r = sess.run_ps(ps)
+        return r.status_code, r.std_out.decode(errors="replace")
     except Exception as e:
         return 1, f"winrm error: {e}"
 
@@ -266,15 +337,14 @@ def main():
         record(S, "HTTP CrazyRhino (PENGUIN:80)", http_store, 100)
 
         def ldap():
-            # Anonymous simple bind (LDAPv3); expect a BindResponse (0x61)
+            # Anonymous simple bind (LDAPv3); AD answers with a long-form BER length, so look for the
+            # BindResponse tag (0x61) anywhere in the reply, as the scoring engine does.
             bind = bytes.fromhex("300c020101600702010304008000")
             with socket.create_connection((GIRAFFE, 389), TIMEOUT) as s:
                 s.settimeout(TIMEOUT)
                 s.sendall(bind)
-                r = s.recv(1024)
-                if not r or r[0] != 0x30 or b"\x61" not in r[:8]:
-                    return bad("no LDAP bindResponse")
-            return ok("LDAP bind response received")
+                r = s.recv(256)
+            return ok("LDAP BindResponse received") if len(r) >= 7 and 0x61 in r else bad("no LDAP bindResponse")
         record(S, "LDAP (GIRAFFE:389)", ldap, 100)
 
         record(S, "Kerberos (GIRAFFE:88)", lambda: ok() if tcp_open(GIRAFFE, 88) else bad("port closed"), 100)
@@ -328,18 +398,13 @@ def main():
         def rdp():
             if not tcp_open(MEERKAT, 3389):
                 return bad("port closed")
-            if have("xfreerdp"):
-                rc, out = run(["xfreerdp", f"/v:{MEERKAT}", "/d:zooland", "/u:jsmith", f"/p:{EMP_PW}",
-                               "/cert:ignore", "+auth-only", "/sec:nla"], timeout=30)
-                return ok("NLA auth OK") if rc == 0 else bad(out.strip().splitlines()[-1][:80] if out.strip() else f"rc={rc}")
-            # Fallback: X.224 connection request must be confirmed
-            with socket.create_connection((MEERKAT, 3389), TIMEOUT) as s:
-                s.settimeout(TIMEOUT)
-                s.sendall(bytes.fromhex("030000130ee000000000000100080003000000"))
-                r = s.recv(64)
-            if r[:1] == b"\x03":
-                return skip("port speaks RDP but credential login not tested (install freerdp: xfreerdp)")
-            return bad("no RDP response")
+            try:
+                sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scoring_engine"))
+                from checks import check_rdp_login  # the scoring engine's own CredSSP/NTLMv2 check
+            except Exception as e:
+                return skip(f"could not import scoring_engine.checks: {e}")
+            up, msg = check_rdp_login(MEERKAT, 3389, "zooland", "jsmith", EMP_PW)
+            return (ok if up else bad)(msg)
         record(S, "RDP login jsmith (MEERKAT:3389)", rdp, 50)
 
         for label, host in (("PENGUIN", PENGUIN), ("HIPPO", HIPPO), ("FLAMINGO", FLAMINGO), ("OTTER", OTTER)):
@@ -470,7 +535,7 @@ def main():
 
         def sqli():
             base_q = "/api/products?search=" + "zzzz_no_such_product_zzzz"
-            inj_q = "/api/products?search=" + "zzzz%27%20OR%20%271%27%3D%271"
+            inj_q = "/api/products?search=" + "zzzz%25%27)%20OR%201%3D1%20--%20"
             _, _, a = http_req(PENGUIN, 5000, base_q)
             st, _, b = http_req(PENGUIN, 5000, inj_q)
             if st == 200 and len(b) > len(a) + 10:
@@ -549,18 +614,12 @@ def main():
             f.login("anonymous", "check@example.com")
             name = "zoocheck_probe.txt"
             try:
-                try:
-                    f.storbinary("STOR " + name, io.BytesIO(b"x"))
-                except ftplib.error_perm:
-                    f.cwd("upload")
-                    f.storbinary("STOR " + name, io.BytesIO(b"x"))
-                try:
-                    f.delete(name)
-                except ftplib.all_errors:
-                    pass
+                f.cwd("upload")
+                f.storbinary("STOR " + name, io.BytesIO(b"x"))
+                f.delete(name)
             finally:
                 f.close()
-            return ok("anonymous login + upload accepted")
+            return ok("anonymous login + upload to /upload accepted")
         record(V, "OTTER anonymous FTP with upload", anon_ftp)
 
         def ver_banner():
@@ -574,7 +633,7 @@ def main():
         record(V, "OTTER no TLS", no_tls)
 
         def otter_conf():
-            r = ssh_root(OTTER, "grep -hE '^(chroot_local_user|ssl_enable|anon_umask)' /etc/vsftpd.conf; stat -c %a /srv/ftp; iptables -S | head -5")
+            r = ssh_root(OTTER, "grep -hE '^(chroot_local_user|ssl_enable|anon_umask)' /etc/vsftpd.conf; stat -c 'perm=%a' /srv/ftp/pub /srv/ftp/upload /srv/ftp/incoming; (command -v iptables >/dev/null && iptables -S | head -5) || echo NO-IPTABLES")
             if r is None:
                 return skip("sshpass not installed")
             o = r[1]
@@ -583,12 +642,12 @@ def main():
                 problems.append("chroot_local_user not NO")
             if "ssl_enable=NO" not in o:
                 problems.append("ssl_enable not NO")
-            if not re.search(r"^7[0-7]7$", o, re.M):
-                problems.append("/srv/ftp not world-writable")
-            if "-P INPUT ACCEPT" not in o:
+            if len(re.findall(r"^perm=7[0-7]7$", o, re.M)) != 3:
+                problems.append("FTP subdirectories not world-writable")
+            if "-P INPUT ACCEPT" not in o and "NO-IPTABLES" not in o:
                 problems.append("iptables INPUT policy not ACCEPT")
             return bad("; ".join(problems)) if problems else ok("no chroot, no ssl, /srv/ftp writable, iptables open")
-        record(V, "OTTER no chroot, world-writable /srv/ftp, iptables open", otter_conf)
+        record(V, "OTTER no chroot, world-writable FTP dirs, iptables open", otter_conf)
 
         # ---------------- FLAMINGO ----------------
         V = "FLAMINGO"
@@ -615,14 +674,14 @@ def main():
         record(V, "FLAMINGO plaintext IMAP/POP3, no TLS", dovecot_plain)
 
         def postfix_conf():
-            r = ssh_root(FLAMINGO, "postconf -h mynetworks smtpd_tls_security_level smtpd_sasl_auth_enable; iptables -S | head -3")
+            r = ssh_root(FLAMINGO, "postconf -h mynetworks smtpd_tls_security_level smtpd_sasl_auth_enable; (command -v iptables >/dev/null && iptables -S | head -3) || echo NO-IPTABLES")
             if r is None:
                 return skip("sshpass not installed")
             o = r[1]
             probs = []
             if "0.0.0.0/0" not in o:
                 probs.append("mynetworks != 0.0.0.0/0")
-            if "-P INPUT ACCEPT" not in o:
+            if "-P INPUT ACCEPT" not in o and "NO-IPTABLES" not in o:
                 probs.append("iptables not open")
             return bad("; ".join(probs)) if probs else ok("mynetworks 0.0.0.0/0, iptables open")
         record(V, "FLAMINGO mynetworks 0.0.0.0/0, iptables open", postfix_conf)
@@ -645,13 +704,15 @@ def main():
         record(V, "HIPPO LOAD DATA LOCAL enabled", local_infile)
 
         def test_db():
-            r = mysql_q(HIPPO, "", "", "SHOW DATABASES")
-            if r is None:
-                return skip("mysql/mariadb client not installed")
-            # anonymous (''@'%') should be able to reach the test database
-            r = run([mysql_cmd(), f"-h{HIPPO}", "--connect-timeout=6", "-N", "-B", "-e", "SELECT 1", "test"], timeout=20)
-            return ok("anonymous access to test DB") if r[0] == 0 else bad(r[1].strip()[:80])
-        record(V, "HIPPO open test database", test_db)
+            # README says ''@'%' (anonymous); the role actually creates testuser/testuser with ALL on test.*.
+            # Either way the test database is reachable remotely without an admin credential.
+            for user, pw in (("", ""), ("testuser", "testuser")):
+                rc, out = mysql_q(HIPPO, user, pw, "SELECT 1", db="test")
+                if rc == 0:
+                    return ok(f"test DB open to {user or 'anonymous'}" +
+                              ("" if not user else " (role uses testuser, README says anonymous ''@'%')"))
+            return bad(out.strip()[:80])
+        record(V, "HIPPO open test database (testuser or anonymous)", test_db)
 
         def pii():
             r = mysql_q(HIPPO, "root", "password", "SELECT COUNT(*) FROM employees WHERE ssn IS NOT NULL AND ssn<>''", db="ccdc_company")
@@ -664,10 +725,10 @@ def main():
         record(V, "HIPPO PII in ccdc_company.employees", pii)
 
         def hippo_fw():
-            r = ssh_root(HIPPO, "iptables -S | head -3")
+            r = ssh_root(HIPPO, "(command -v iptables >/dev/null && iptables -S | head -3) || echo NO-IPTABLES")
             if r is None:
                 return skip("sshpass not installed")
-            return ok("INPUT ACCEPT") if "-P INPUT ACCEPT" in r[1] else bad(r[1].strip()[:80])
+            return ok("INPUT ACCEPT or no iptables") if "-P INPUT ACCEPT" in r[1] or "NO-IPTABLES" in r[1] else bad(r[1].strip()[:80])
         record(V, "HIPPO iptables open", hippo_fw)
 
     # ----------------------------------------------------------------------

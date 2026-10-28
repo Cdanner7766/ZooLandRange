@@ -75,7 +75,9 @@
       mynetworks = 0.0.0.0/0
 
       # VULN: Accept mail from anyone (open relay)
-      smtpd_relay_restrictions = permit
+      # (a bare "permit" makes smtpd exit at startup: Postfix requires a reject-type
+      # restriction somewhere in the list; "permit" matches first so everyone is still relayed)
+      smtpd_relay_restrictions = permit, reject
 
       # VULN: No TLS - all traffic in cleartext
       smtpd_tls_security_level = none

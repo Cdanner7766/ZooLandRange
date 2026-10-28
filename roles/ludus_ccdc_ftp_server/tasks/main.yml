@@ -118,6 +118,10 @@
     chmod -R 777 /srv/ftp/upload
     chmod -R 777 /srv/ftp/incoming
     chown -R ftp:ftp /srv/ftp
+    # vsftpd refuses anonymous logins when the chroot root itself is writable by
+    # the ftp user, so the root stays root-owned; the 777 subdirectories keep the
+    # anonymous-upload vulnerability.
+    chown root:root /srv/ftp
     # Create sample files
     echo "Public FTP files - CCDC Practice Range" > /srv/ftp/pub/readme.txt
     echo "Upload directory - anonymous uploads allowed" > /srv/ftp/upload/readme.txt
