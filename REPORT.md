@@ -27,6 +27,11 @@ HIPPO: root@% / password, local_infile=1, open test DB, PII, no firewall.
 | 8 | RDP check failed for every domain account | engine's CredSSP did not seal pubKeyAuth with NTLM; correct passwords got a TLS alert | Implemented NTLM sealing in `scoring_engine/checks.py` and the role copy (a7dd1c7). Wrong password still fails (0xC000006D) |
 | 9 | tests/check.py bugs (root SSH, 5985, LDAP parse, SQLi payload, no mysql client) | my test assumptions | fixed (e1575dc, 93f3b18) |
 
+## Fresh-deploy verification (range destroyed and rebuilt)
+- Full `ludus range deploy` from nothing, then one roles-only redeploy. The full deploy exposed one more bug: GIRAFFE `scooper` password `"C00p3r$IT9"` was in a double-quoted PowerShell string, so `$IT9` expanded to empty and the password failed AD complexity (scooper, jharris, mrobinson were not created). Fixed with single quotes (a0e6ea6). Earlier runs missed it because the failure was swallowed.
+- After that: every host `failed=0` except `ludus_ccdc_blueteam_access` (admin-only). `tests/check.py --strict` exit 0, 900/900, 31/31. Scoring engine rotation confirmed live.
+- Caveat: this was a full deploy plus a roles-only redeploy, not one single uninterrupted full deploy with the final commits. ZEBRA still shows one rescued WinRM error (failed=0).
+
 ## BLOCKED / needs admin
 - `ludus_ccdc_blueteam_access` cannot run as the non-admin Ludus user (`pveum` fails with "Unable to load access control list"). An admin applied it manually: `BlueTeam@pve` created and `PVEVMUser` granted on `/vms/114`-`/vms/120`; ACLs verified. Adding the VMs to a `ZooLand-BlueTeam` pool also failed (VMs already in the Ludus `CLAUDEAGENT` pool, no `allow-move`), so the role now uses per-VM ACLs instead of a pool. The rewritten role is untested in a deploy. Any deploy by a non-admin will still show this one error. After a range rebuild the VM IDs change; re-run the ACL grant (or deploy as admin).
 
