@@ -5,9 +5,16 @@
 - name: "Use public DNS resolvers (router DNS is unreachable from the range)"
   ansible.builtin.shell: |
     set -e
+    # Ludus writes the router as DNS in /etc/network/interfaces and
+    # /etc/systemd/resolved.conf and re-applies it; replace it at the source.
+    if [ -f /etc/network/interfaces ]; then
+      sed -i 's/^\([[:space:]]*dns-nameservers\).*/\1 1.1.1.1 8.8.8.8/' /etc/network/interfaces
+    fi
     if systemctl is-active --quiet systemd-resolved; then
+      sed -i 's/^DNS=.*/DNS=1.1.1.1 8.8.8.8/' /etc/systemd/resolved.conf
       mkdir -p /etc/systemd/resolved.conf.d
       printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' > /etc/systemd/resolved.conf.d/zooland-dns.conf
+      systemctl restart systemd-resolved
       resolvectl dns "$(ip route show default | awk '{print $5; exit}')" 1.1.1.1 8.8.8.8
     else
       grep -q '^supersede domain-name-servers' /etc/dhcp/dhclient.conf 2>/dev/null || \
