@@ -1,4 +1,24 @@
 ---
+# The Ludus router's DNS (10.X.10.254) rejects queries from range VMs because
+# the default always_blocked_networks rule covers 10.0.0.0/8, so apt and other
+# downloads hang. Use public resolvers instead (internet traffic is NATed).
+- name: "Use public DNS resolvers (router DNS is unreachable from the range)"
+  ansible.builtin.shell: |
+    set -e
+    if systemctl is-active --quiet systemd-resolved; then
+      mkdir -p /etc/systemd/resolved.conf.d
+      printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' > /etc/systemd/resolved.conf.d/zooland-dns.conf
+      resolvectl dns "$(ip route show default | awk '{print $5; exit}')" 1.1.1.1 8.8.8.8
+    else
+      grep -q '^supersede domain-name-servers' /etc/dhcp/dhclient.conf 2>/dev/null || \
+        echo 'supersede domain-name-servers 1.1.1.1, 8.8.8.8;' >> /etc/dhcp/dhclient.conf
+      printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
+    fi
+  args:
+    executable: /bin/bash
+  become: true
+  changed_when: true
+
 # tasks file for ludus_ccdc_db_server
 # Configures MariaDB/MySQL server with intentional CCDC vulnerabilities
 
