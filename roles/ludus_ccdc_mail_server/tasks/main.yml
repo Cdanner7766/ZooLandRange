@@ -75,9 +75,10 @@
       mynetworks = 0.0.0.0/0
 
       # VULN: Accept mail from anyone (open relay)
-      # (a bare "permit" makes smtpd exit at startup: Postfix requires a reject-type
-      # restriction somewhere in the list; "permit" matches first so everyone is still relayed)
-      smtpd_relay_restrictions = permit, reject
+      # (a bare "permit" makes smtpd exit at startup: Postfix needs a working reject-type
+      # restriction in the list, and ignores one placed after "permit".) Because
+      # mynetworks = 0.0.0.0/0, permit_mynetworks matches every client, so relaying stays open.
+      smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
 
       # VULN: No TLS - all traffic in cleartext
       smtpd_tls_security_level = none
