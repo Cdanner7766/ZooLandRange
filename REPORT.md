@@ -27,6 +27,13 @@ HIPPO: root@% / password, local_infile=1, open test DB, PII, no firewall.
 | 8 | RDP check failed for every domain account | engine's CredSSP did not seal pubKeyAuth with NTLM; correct passwords got a TLS alert | Implemented NTLM sealing in `scoring_engine/checks.py` and the role copy (a7dd1c7). Wrong password still fails (0xC000006D) |
 | 9 | tests/check.py bugs (root SSH, 5985, LDAP parse, SQLi payload, no mysql client) | my test assumptions | fixed (e1575dc, 93f3b18) |
 
+## Second fresh-deploy verification (2026-10-29, after this session's rotation/password-policy/team-page changes)
+- Full `ludus range rm` + full `ludus range deploy` from nothing (~1h41m). `ludus range errors` returned **nothing at all** — the first fully clean deploy this session, now that `ludus_ccdc_blueteam_access` warns and skips instead of erroring for a non-admin user.
+- Every host recap showed `failed=0`, including `ludus_ccdc_blueteam_access` on SCORESVR (skipped with its warning).
+- `tests/check.py --strict` exit 0: 900/900 scoring, 32/32 vulnerabilities (including the new weak domain password policy check), 15/15 rotation-account logins.
+- Verified live and specifically: the CrazyRhino "Meet the Team" page (`/team`, `/api/team`) returns all 15 employees over HTTP 200 from JAGUAR; GIRAFFE's domain password policy is complexity-off/min-length-5/no-lockout.
+- Conclusion: every change made in this session (account rotation, per-employee passwords, the weak password policy, the blueteam_access skip, the team page) survives a from-scratch deploy with zero manual intervention beyond the one-time admin ACL step (VM IDs stayed the same, so the existing BlueTeam ACLs still apply; a future rebuild with different IDs needs that redone).
+
 ## Fresh-deploy verification (range destroyed and rebuilt)
 - Full `ludus range deploy` from nothing, then one roles-only redeploy. The full deploy exposed one more bug: GIRAFFE `scooper` password `"C00p3r$IT9"` was in a double-quoted PowerShell string, so `$IT9` expanded to empty and the password failed AD complexity (scooper, jharris, mrobinson were not created). Fixed with single quotes (a0e6ea6). Earlier runs missed it because the failure was swallowed.
 - After that: every host `failed=0` except `ludus_ccdc_blueteam_access` (admin-only). `tests/check.py --strict` exit 0, 900/900, 31/31. Scoring engine rotation confirmed live (later expanded to five accounts for FTP, IMAP and RDP; 15/15 rotation logins verified by check.py).
