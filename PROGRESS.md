@@ -45,3 +45,4 @@ Cycle 2: re-running `ludus range deploy -t user-defined-roles` after DNS fix (co
 - 17:21 blueteam_access now probes for Proxmox rights and skips with a WARNING (bbc7f79). Limited deploy (-l SCORESVR --only-roles) ended SUCCESS, failed=0, no errors. Non-admin deploys no longer report an error; admin still has to apply the ACLs.
 - 23:24 HIPPO test DB decision: follow the role (testuser/testuser). README, CLAUDE.md and check.py (now requires testuser) updated; vuln checks 31/31 live.
 - 23:27 Docs audit: README, SETUP (scoring total was 800, SSH rows missing), ARCHITECTURE, VULNERABILITIES, UPDATES updated for rotation, SMTP relay config, FTP dirs, testuser, always_blocked_networks, blueteam ACLs.
+- 23:32 DEMO.md reviewed: section 1 (rotation, key button), 11 + quick ref (root SSH password login is refused; use weak users or localuser+sudo), 12 (test_range.sh verified: 0 failed, 1 warn; check.py mention). README OS root row fixed.

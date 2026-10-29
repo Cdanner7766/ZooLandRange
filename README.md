@@ -360,7 +360,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | MySQL admin | `admin` | `admin` | `admin@%` (any host) |
 | MySQL app user | `dbuser` | `dbuser` | `dbuser@%` (any host) |
 | MySQL test user | `testuser` | `testuser` | `ALL` on `test.*`, any host (`testuser@%`) |
-| OS root | `root` | `ZooTime!` | SSH/console |
+| OS root | `root` | `ZooTime!` | Console only (sshd refuses root password login; SSH as `localuser` / `password` and use `sudo -i`) |
 | OS local user | `admin` | `admin` | SSH/console |
 | OS local user | `dbadmin` | `password` | SSH/console |
 | Ludus default | `debian` | `debian` | SSH/console |
