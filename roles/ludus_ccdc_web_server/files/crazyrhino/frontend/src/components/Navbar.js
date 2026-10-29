@@ -32,6 +32,7 @@ export default function Navbar() {
           <Link to="/shop" className="nav-link">Shop</Link>
           <Link to="/shop/merchandise" className="nav-link">Merchandise</Link>
           <Link to="/shop/tickets" className="nav-link">Tickets</Link>
+          <Link to="/team" className="nav-link">Our Team</Link>
         </div>
 
         <div className="nav-actions">
@@ -67,6 +68,7 @@ export default function Navbar() {
           <Link to="/shop" className="mobile-link" onClick={() => setMenuOpen(false)}>Shop All</Link>
           <Link to="/shop/merchandise" className="mobile-link" onClick={() => setMenuOpen(false)}>Merchandise</Link>
           <Link to="/shop/tickets" className="mobile-link" onClick={() => setMenuOpen(false)}>Tickets & Experiences</Link>
+          <Link to="/team" className="mobile-link" onClick={() => setMenuOpen(false)}>Our Team</Link>
           {user ? (
             <>
               <Link to="/orders" className="mobile-link" onClick={() => setMenuOpen(false)}>My Orders</Link>

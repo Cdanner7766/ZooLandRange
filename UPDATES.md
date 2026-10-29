@@ -304,3 +304,21 @@ The red team for this range has limited experience, so the domain is made an eas
 - **Three employees now use 5-7 lowercase letters only:** `ajohnson` / `sunny`, `tlee` / `dragon`, `kbrown` / `letmein`. They are not scoring-rotation accounts. The other twelve employee passwords are unchanged.
 - `tests/check.py` has a new vulnerability check, "GIRAFFE weak password policy", so the range now has 32 vulnerability checks.
 - Note: after a password reset Windows accepts the old password for NTLM logons for up to 60 minutes, so on an already-deployed range the previous password can still work for that long.
+
+---
+
+## 2026-10-29 (team page)
+
+### New: public "Meet the Team" page on the CrazyRhino store — a discoverable employee directory
+**Files:** `roles/ludus_ccdc_web_server/files/crazyrhino/backend/routes/team.js` (new), `backend/server.js`,
+`frontend/src/pages/Team.js` + `Team.css` (new), `frontend/src/App.js`, `frontend/src/components/Navbar.js`,
+`frontend/src/components/Footer.js`
+
+Added a legitimate-looking staff directory (`GET /api/team`, page at `/team`) linked from the nav bar and
+footer so it's found by ordinary browsing — no special tooling needed. It lists the 15 standard employees'
+name, department and work email (`jsmith@zooland.local`), which reveals the AD username convention
+(first initial + last name) without publishing a username list outright. This gives red team members with
+little experience a realistic, discoverable way to learn real usernames before attempting a password
+guess/spray against AD (LDAP/RDP), rather than being handed the list directly. The 12 hidden AD accounts
+are not listed. This is not a vulnerability — just a feature that doubles as an intentional recon path —
+and is documented as such in README.md, not in the vulnerability tables.

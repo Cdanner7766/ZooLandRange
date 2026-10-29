@@ -32,6 +32,11 @@ export default function Footer() {
           <a href="#map">Zoo Map</a>
           <a href="#contact">Contact Us</a>
         </div>
+
+        <div className="footer-links">
+          <h4>Company</h4>
+          <Link to="/team">Meet the Team</Link>
+        </div>
       </div>
       <div className="footer-bottom">
         <p>© 2024 Wild Kingdom Zoo. All rights reserved. This is a simulated e-commerce environment.</p>

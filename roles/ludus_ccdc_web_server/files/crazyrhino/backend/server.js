@@ -19,6 +19,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/team', require('./routes/team'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'Wild Kingdom Zoo Store API' }));

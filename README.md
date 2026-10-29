@@ -211,6 +211,8 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | App admin | `admin` | `admin123` | CrazyRhino admin panel |
 | App demo user | `johndoe` | `password123` | CrazyRhino regular user |
 
+**Meet the Team page (`/team`, `GET /api/team`):** a public staff directory on the storefront, linked from the nav bar and footer — not a vulnerability, just a realistic corporate feature. It lists the 15 standard employees' name, department, and work email. The email local part (`jsmith@zooland.local`) reveals the domain's username convention (first initial + last name) without publishing usernames outright, the same way a red teamer would normally infer it from LinkedIn before a password-spray attempt. The 12 hidden AD accounts are not listed.
+
 **Vulnerabilities:**
 
 | # | Vulnerability | Technical Detail | Config Location |

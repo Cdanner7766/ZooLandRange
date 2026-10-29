@@ -132,6 +132,23 @@ curl -s -X POST http://10.X.10.23:5000/api/auth/register \
   | python3 -m json.tool
 ```
 
+### Find the employee directory (red team recon)
+
+The store has a public "Meet the Team" page — a realistic feature, not a bug — linked from the nav bar and footer:
+```
+http://10.X.10.23/team
+```
+or via the API it calls:
+```bash
+curl -s http://10.X.10.23/api/team | python3 -m json.tool
+```
+
+It lists each of the 15 standard employees' name, department, and work email. The email reveals the
+company's username convention (`jsmith@zooland.local` → AD username `jsmith`) without publishing a
+username list outright — the same OSINT step a red teamer would do against LinkedIn before trying a
+password spray against AD or the other services. From here, a logical next step is guessing simple
+passwords for a few of these usernames against LDAP (GIRAFFE:389) or RDP (MEERKAT:3389).
+
 ---
 
 ## 3. Email — Sending Mail Between Employees
