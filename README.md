@@ -359,6 +359,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | MySQL root (remote) | `root` | `password` | `root@%` (any host) |
 | MySQL admin | `admin` | `admin` | `admin@%` (any host) |
 | MySQL app user | `dbuser` | `dbuser` | `dbuser@%` (any host) |
+| MySQL test user | `testuser` | `testuser` | `ALL` on `test.*`, any host (`testuser@%`) |
 | OS root | `root` | `ZooTime!` | SSH/console |
 | OS local user | `admin` | `admin` | SSH/console |
 | OS local user | `dbadmin` | `password` | SSH/console |
@@ -369,7 +370,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | Database | Contents |
 |----------|----------|
 | `ccdc_company` | `employees` table with names, emails, SSNs, salaries (PII) |
-| `test` | Empty test database accessible to anonymous users |
+| `test` | Empty test database; `testuser` / `testuser` has `GRANT ALL` from any host |
 
 **Vulnerabilities:**
 
@@ -381,7 +382,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | 4 | **Weak admin account** | `admin:admin` with `ALL PRIVILEGES` and `GRANT OPTION` | MySQL user grants |
 | 5 | **Weak app user** | `dbuser:dbuser` with `ALL PRIVILEGES` on everything | MySQL user grants |
 | 6 | **LOAD DATA LOCAL enabled** | `local-infile = 1` allows reading server-side files via SQL | `/etc/mysql/mariadb.conf.d/99-insecure.cnf` |
-| 7 | **Test database open** | `test` database with `GRANT ALL` to anonymous users (`''@'%'`) | MySQL user grants |
+| 7 | **Test database open** | `test` database with `GRANT ALL` to `testuser` / `testuser` from any host (`'testuser'@'%'`) | MySQL user grants |
 | 8 | **PII in database** | SSNs and salaries stored in plaintext in `ccdc_company.employees` | `ccdc_company` database |
 | 9 | **Firewall disabled** | iptables flushed, all policies set to ACCEPT | iptables rules |
 | 10 | **Weak OS accounts** | `admin:admin`, `dbadmin:password`, `root:ZooTime!` | `/etc/shadow` |

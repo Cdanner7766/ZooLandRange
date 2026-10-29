@@ -711,15 +711,12 @@ def main():
         record(V, "HIPPO LOAD DATA LOCAL enabled", local_infile)
 
         def test_db():
-            # README says ''@'%' (anonymous); the role actually creates testuser/testuser with ALL on test.*.
-            # Either way the test database is reachable remotely without an admin credential.
-            for user, pw in (("", ""), ("testuser", "testuser")):
-                rc, out = mysql_q(HIPPO, user, pw, "SELECT 1", db="test")
-                if rc == 0:
-                    return ok(f"test DB open to {user or 'anonymous'}" +
-                              ("" if not user else " (role uses testuser, README says anonymous ''@'%')"))
+            # The role creates testuser/testuser with ALL on test.* from any host.
+            rc, out = mysql_q(HIPPO, "testuser", "testuser", "SELECT 1", db="test")
+            if rc == 0:
+                return ok("test DB open to testuser/testuser")
             return bad(out.strip()[:80])
-        record(V, "HIPPO open test database (testuser or anonymous)", test_db)
+        record(V, "HIPPO open test database (testuser/testuser)", test_db)
 
         def pii():
             r = mysql_q(HIPPO, "root", "password", "SELECT COUNT(*) FROM employees WHERE ssn IS NOT NULL AND ssn<>''", db="ccdc_company")

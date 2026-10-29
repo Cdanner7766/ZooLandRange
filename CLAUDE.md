@@ -54,7 +54,7 @@ Linux root (PENGUIN, OTTER, FLAMINGO, HIPPO)	root	ZooTime! (SSH root password lo
 Linux weak users	admin / admin, ftpuser / ftpuser, mail / mail, webadmin / password, dbadmin / password, user / password	see left
 Ludus Linux default	localuser	password (passwordless sudo; debian/debian does not work)
 Kali	kali	kali
-MariaDB	root / password, admin / admin, dbuser / dbuser	see left
+MariaDB	root / password, admin / admin, dbuser / dbuser, testuser / testuser	see left
 CrazyRhino app	admin / admin123, johndoe / password123	see left
 Proxmox blue team	BlueTeam@pve	BlueTeam
 
@@ -128,7 +128,7 @@ ZEBRA: SMBv1 on, Everyone Full Control on Public and Shared, guest access on, fi
 PENGUIN: /api/debug leaks env vars, SQL injection in ?search=, admin / admin123, IDOR on /api/orders/:orderNumber, no rate limiting, HTTP only, X-Powered-By: Express, /opt/crazyrhino/backup_credentials.txt, UFW off.
 OTTER: anonymous FTP with upload, no TLS, no chroot, world-writable FTP dirs (/srv/ftp/pub, upload, incoming are 777; /srv/ftp itself must stay root-owned because vsftpd refuses an anonymous chroot root that is writable), vsftpd version in banner, iptables open.
 FLAMINGO: open SMTP relay, no SMTP auth, no TLS on Postfix or Dovecot, mynetworks = 0.0.0.0/0, plaintext IMAP/POP3 auth, iptables open.
-HIPPO: MariaDB bound to 0.0.0.0, root@% login with password password, LOAD DATA LOCAL enabled, open test database (the role creates testuser/testuser; README says anonymous ''@'%'. check.py accepts either; decision for the owner), PII in ccdc_company.employees, iptables open.
+HIPPO: MariaDB bound to 0.0.0.0, root@% login with password password, LOAD DATA LOCAL enabled, open test database (testuser / testuser has ALL on test.* from any host), PII in ccdc_company.employees, iptables open.
 Rules
 Do not change Proxmox networking, iptables on the Proxmox host, or Ludus server config.
 Do not run ludus user, ludus-admin, or any command that affects other users' ranges.
