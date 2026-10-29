@@ -101,11 +101,11 @@ def _build_services():
             # them, one per round.  Update each password via the dashboard if blue
             # team changes it.
             "users": [
-                {"user": "mlopez", "pass": "ZooLand2025!"},
-                {"user": "rthomas", "pass": "ZooLand2025!"},
-                {"user": "jsmith", "pass": "ZooLand2025!"},
-                {"user": "bwilson", "pass": "ZooLand2025!"},
-                {"user": "mchen", "pass": "ZooLand2025!"},
+                {"user": "mlopez", "pass": "Football1"},
+                {"user": "rthomas", "pass": "Baseball1"},
+                {"user": "jsmith", "pass": "Welcome123"},
+                {"user": "bwilson", "pass": "Spring2025"},
+                {"user": "mchen", "pass": "Monkey123"},
             ],
         },
         {
@@ -126,11 +126,11 @@ def _build_services():
             "has_credentials": True,
             # Accounts provisioned by the mail server role.  Rotated one per round.
             "users": [
-                {"user": "jsmith", "pass": "ZooLand2025!"},
-                {"user": "bwilson", "pass": "ZooLand2025!"},
-                {"user": "mchen", "pass": "ZooLand2025!"},
-                {"user": "mlopez", "pass": "ZooLand2025!"},
-                {"user": "rthomas", "pass": "ZooLand2025!"},
+                {"user": "jsmith", "pass": "Welcome123"},
+                {"user": "bwilson", "pass": "Spring2025"},
+                {"user": "mchen", "pass": "Monkey123"},
+                {"user": "mlopez", "pass": "Football1"},
+                {"user": "rthomas", "pass": "Baseball1"},
             ],
         },
         {
@@ -199,11 +199,11 @@ def _build_services():
             # ZooLand domain users (all in Domain Users, which has RDP rights on
             # MEERKAT).  Rotated one per round.
             "users": [
-                {"user": "jsmith", "pass": "ZooLand2025!"},
-                {"user": "bwilson", "pass": "ZooLand2025!"},
-                {"user": "mchen", "pass": "ZooLand2025!"},
-                {"user": "mlopez", "pass": "ZooLand2025!"},
-                {"user": "rthomas", "pass": "ZooLand2025!"},
+                {"user": "jsmith", "pass": "Welcome123"},
+                {"user": "bwilson", "pass": "Spring2025"},
+                {"user": "mchen", "pass": "Monkey123"},
+                {"user": "mlopez", "pass": "Football1"},
+                {"user": "rthomas", "pass": "Baseball1"},
             ],
         },
         # ------------------------------------------------------------------

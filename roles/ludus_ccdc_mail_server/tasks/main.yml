@@ -160,12 +160,13 @@
   ignore_errors: true
 
 # Scored employee accounts — the scoring engine rotates its IMAP login check
-# through all five, one per round (weak shared password, like the domain users).
+# through all five, one per round (each with the same basic weak password as its domain account).
 - name: "Create employee mail accounts"
   ansible.builtin.shell: |
-    for u in jsmith bwilson mchen mlopez rthomas; do
+    for up in jsmith:Welcome123 bwilson:Spring2025 mchen:Monkey123 mlopez:Football1 rthomas:Baseball1; do
+      u=${up%%:*}; p=${up#*:}
       id "$u" >/dev/null 2>&1 || useradd -m -s /bin/bash "$u"
-      echo "$u:ZooLand2025!" | chpasswd
+      echo "$u:$p" | chpasswd
       mkdir -p /home/$u/Maildir/{new,cur,tmp}
       chown -R $u:$u /home/$u/Maildir
     done

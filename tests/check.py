@@ -35,7 +35,7 @@ import hashlib
 TIMEOUT = 6
 ROOT_PW = "ZooTime!"
 ADMIN_PW = "ZooTime!"
-EMP_PW = "ZooLand2025!"
+EMP_PWS = {"jsmith": "Welcome123", "mlopez": "Football1"}  # basic weak employee passwords (rotation accounts are checked via the engine config)
 
 PASS, FAIL, SKIP = "PASS", "FAIL", "SKIP"
 results = []  # (section, name, status, detail, points)
@@ -370,7 +370,7 @@ def main():
         record(S, "MySQL (HIPPO:3306)", mysql_port, 75)
 
         def imap():
-            r = converse(FLAMINGO, 143, [f"a1 LOGIN jsmith {EMP_PW}", "a2 LOGOUT"])
+            r = converse(FLAMINGO, 143, [f"a1 LOGIN jsmith {EMP_PWS['jsmith']}", "a2 LOGOUT"])
             return ok("login OK") if "a1 OK" in r[1] else bad(r[1].strip()[:80])
         record(S, "IMAP login jsmith (FLAMINGO:143)", imap, 50)
 
@@ -391,7 +391,7 @@ def main():
         record(S, "SMB (ZEBRA:445)", smb, 50)
 
         def ftp():
-            r = converse(OTTER, 21, ["USER mlopez", f"PASS {EMP_PW}", "QUIT"])
+            r = converse(OTTER, 21, ["USER mlopez", f"PASS {EMP_PWS['mlopez']}", "QUIT"])
             return ok("230 login OK") if r[2].startswith("230") else bad(r[2].strip()[:80])
         record(S, "FTP login mlopez (OTTER:21)", ftp, 50)
 
@@ -403,7 +403,7 @@ def main():
                 from checks import check_rdp_login  # the scoring engine's own CredSSP/NTLMv2 check
             except Exception as e:
                 return skip(f"could not import scoring_engine.checks: {e}")
-            up, msg = check_rdp_login(MEERKAT, 3389, "zooland", "jsmith", EMP_PW)
+            up, msg = check_rdp_login(MEERKAT, 3389, "zooland", "jsmith", EMP_PWS["jsmith"])
             return (ok if up else bad)(msg)
         record(S, "RDP login jsmith (MEERKAT:3389)", rdp, 50)
 

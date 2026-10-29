@@ -2,7 +2,7 @@
 # Creates ZooLand Inc. employee AD accounts on the domain controller.
 # 27 accounts total:
 #   domainadmin           — domain admin service account (ZooTime!)
-#   15 standard employees — all use ZooLand2025! (jsmith, bwilson, mchen, mlopez,
+#   15 standard employees — each has its own basic weak password (jsmith, bwilson, mchen, mlopez,
 #                           rthomas, ajohnson, tlee, swilliams, pgarcia, kbrown,
 #                           lmartinez, djones, nanderson, cwilson, emiller)
 #   12 hidden employees   — individual passwords (mixed weak/mid-strength, not in BLUETEAM.md)
@@ -11,8 +11,8 @@
 # OTTER FTP accounts:     mlopez, rthomas
 #
 # Scoring engine defaults:
-#   IMAP (FLAMINGO) - jsmith / ZooLand2025!
-#   FTP  (OTTER)    - mlopez / ZooLand2025!
+#   IMAP (FLAMINGO) - rotates jsmith, bwilson, mchen, mlopez, rthomas
+#   FTP  (OTTER)    - rotates the same five
 
 # GIRAFFE runs AD-integrated DNS for zooland.local (created automatically
 # by Ludus during domain promotion). We add service A records and apply
@@ -95,25 +95,25 @@
     script: |
       $domain = "zooland.local"
       $users = @(
-        @{ SamAccountName="jsmith";     GivenName="John";       Surname="Smith";     Description="IT Support"   },
-        @{ SamAccountName="bwilson";    GivenName="Barbara";    Surname="Wilson";    Description="HR"           },
-        @{ SamAccountName="mchen";      GivenName="Michelle";   Surname="Chen";      Description="Finance"      },
-        @{ SamAccountName="mlopez";     GivenName="Maria";      Surname="Lopez";     Description="Logistics"    },
-        @{ SamAccountName="rthomas";    GivenName="Robert";     Surname="Thomas";    Description="Warehouse"    },
-        @{ SamAccountName="ajohnson";   GivenName="Alex";       Surname="Johnson";   Description="Marketing"    },
-        @{ SamAccountName="tlee";       GivenName="Thomas";     Surname="Lee";       Description="Operations"   },
-        @{ SamAccountName="swilliams";  GivenName="Sarah";      Surname="Williams";  Description="Veterinary"   },
-        @{ SamAccountName="pgarcia";    GivenName="Patricia";   Surname="Garcia";    Description="Animal Care"  },
-        @{ SamAccountName="kbrown";     GivenName="Kevin";      Surname="Brown";     Description="Security"     },
-        @{ SamAccountName="lmartinez";  GivenName="Lisa";       Surname="Martinez";  Description="Facilities"   },
-        @{ SamAccountName="djones";     GivenName="David";      Surname="Jones";     Description="Research"     },
-        @{ SamAccountName="nanderson";  GivenName="Nicole";     Surname="Anderson";  Description="Education"    },
-        @{ SamAccountName="cwilson";    GivenName="Christopher";Surname="Wilson";    Description="Retail"       },
-        @{ SamAccountName="emiller";    GivenName="Emma";       Surname="Miller";    Description="Administration"}
+        @{ SamAccountName="jsmith";     GivenName="John";       Surname="Smith";     Description="IT Support"; Password='Welcome123'},
+        @{ SamAccountName="bwilson";    GivenName="Barbara";    Surname="Wilson";    Description="HR"; Password='Spring2025'},
+        @{ SamAccountName="mchen";      GivenName="Michelle";   Surname="Chen";      Description="Finance"; Password='Monkey123'},
+        @{ SamAccountName="mlopez";     GivenName="Maria";      Surname="Lopez";     Description="Logistics"; Password='Football1'},
+        @{ SamAccountName="rthomas";    GivenName="Robert";     Surname="Thomas";    Description="Warehouse"; Password='Baseball1'},
+        @{ SamAccountName="ajohnson";   GivenName="Alex";       Surname="Johnson";   Description="Marketing"; Password='Sunshine1'},
+        @{ SamAccountName="tlee";       GivenName="Thomas";     Surname="Lee";       Description="Operations"; Password='Dragon123'},
+        @{ SamAccountName="swilliams";  GivenName="Sarah";      Surname="Williams";  Description="Veterinary"; Password='Princess1'},
+        @{ SamAccountName="pgarcia";    GivenName="Patricia";   Surname="Garcia";    Description="Animal Care"; Password='Iloveyou1'},
+        @{ SamAccountName="kbrown";     GivenName="Kevin";      Surname="Brown";     Description="Security"; Password='Letmein123'},
+        @{ SamAccountName="lmartinez";  GivenName="Lisa";       Surname="Martinez";  Description="Facilities"; Password='Soccer123'},
+        @{ SamAccountName="djones";     GivenName="David";      Surname="Jones";     Description="Research"; Password='Master123'},
+        @{ SamAccountName="nanderson";  GivenName="Nicole";     Surname="Anderson";  Description="Education"; Password='Shadow123'},
+        @{ SamAccountName="cwilson";    GivenName="Christopher";Surname="Wilson";    Description="Retail"; Password='Winter2025'},
+        @{ SamAccountName="emiller";    GivenName="Emma";       Surname="Miller";    Description="Administration"; Password='Abc12345'}
       )
-      $password = ConvertTo-SecureString "ZooLand2025!" -AsPlainText -Force
       foreach ($u in $users) {
         $existing = Get-ADUser -Filter "SamAccountName -eq '$($u.SamAccountName)'" -ErrorAction SilentlyContinue
+        $password = ConvertTo-SecureString $u.Password -AsPlainText -Force
         if (-not $existing) {
           New-ADUser `
             -Name                 "$($u.GivenName) $($u.Surname)" `
@@ -129,7 +129,9 @@
             -ErrorAction          Stop
           Write-Output "Created: $($u.SamAccountName)"
         } else {
-          Write-Output "Already exists: $($u.SamAccountName)"
+          # keep the password in sync on redeploys (accounts from older runs had another password)
+          Set-ADAccountPassword -Identity $u.SamAccountName -NewPassword $password -Reset
+          Write-Output "Already exists, password reset: $($u.SamAccountName)"
         }
       }
 

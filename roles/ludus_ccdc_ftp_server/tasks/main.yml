@@ -138,13 +138,14 @@
   become: true
   ignore_errors: true
 
-# Create realistic employee FTP accounts (weak shared password, like the domain users).
+# Create realistic employee FTP accounts (each with the same basic weak password as its domain account).
 # The scoring engine rotates its FTP login check through all five, one per round.
 - name: "Create ZooLand Inc. employee FTP accounts"
   ansible.builtin.shell: |
-    for u in mlopez rthomas jsmith bwilson mchen; do
+    for up in mlopez:Football1 rthomas:Baseball1 jsmith:Welcome123 bwilson:Spring2025 mchen:Monkey123; do
+      u=${up%%:*}; p=${up#*:}
       id "$u" >/dev/null 2>&1 || useradd -m -s /bin/bash "$u"
-      echo "$u:ZooLand2025!" | chpasswd
+      echo "$u:$p" | chpasswd
       mkdir -p /home/$u/files
       chown -R $u:$u /home/$u
     done

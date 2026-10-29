@@ -7,7 +7,7 @@ ludus:
   # Manages AD, DNS (domain-integrated), DHCP, Group Policy
   # Credentials: Administrator / ZooTime!
   # Domain employee accounts — 27 total:
-  #   15 standard (all ZooLand2025!): jsmith (IMAP scoring), bwilson, mchen,
+  #   15 standard (each with its own basic weak password): jsmith (IMAP scoring), bwilson, mchen,
   #     mlopez (FTP scoring), rthomas, ajohnson, tlee, swilliams, pgarcia,
   #     kbrown, lmartinez, djones, nanderson, cwilson, emiller
   #   12 hidden (individual passwords, mixed weak/mid, not in BLUETEAM.md):
@@ -38,7 +38,7 @@ ludus:
   # ============================================================
   # MEERKAT - Windows 11 Domain-joined Workstation
   # Used for simulating user activity and lateral movement targets
-  # Credentials: Administrator / ZooTime!, domain accounts use ZooLand2025!
+  # Credentials: Administrator / ZooTime!, employee accounts have individual basic weak passwords (see README)
   # ============================================================
   - vm_name: "{{ range_id }}-MEERKAT"
     hostname: "{{ range_id }}-MEERKAT"
@@ -61,7 +61,7 @@ ludus:
   # Domain-joined to zooland.local
   # Service: SMB on port 445
   # Shares: \\ZEBRA\Public, \\ZEBRA\Shared
-  # Credentials: Administrator / ZooTime!, domain accounts use ZooLand2025!
+  # Credentials: Administrator / ZooTime!, employee accounts have individual basic weak passwords (see README)
   # VULNS:
   #   - Everyone has Full Control on all shares
   #   - No share passwords required
