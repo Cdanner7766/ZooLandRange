@@ -11,7 +11,7 @@ The vulnerabilities are intentional. Never fix or harden them. Your job is to fi
 Autonomy
 Work without asking the user anything. When something is ambiguous, pick the most reasonable option, record the decision in PROGRESS.md, and continue.
 Keep a running log in PROGRESS.md: what you tried, what failed, what you changed, the current step, and what is next. Update it after every deploy/test cycle. Your context will fill up over a long run, so at the start of every session (and after any context reset) read PROGRESS.md first and resume from it.
-Keep long commands from hanging forever. Wrap them in timeout (for example timeout 3600 ludus range deploy). Do not use ludus range logs -f or other follow commands, which never exit. Poll ludus range status every 60 seconds and read ludus range logs once the deploy ends.
+Keep long commands from hanging forever. Wrap them in timeout. Note that `ludus range deploy` returns as soon as the deploy starts, so the timeout does not cap the deploy itself: poll `ludus range status` every 60 seconds with an overall cap of about 2 hours. A full deploy takes about 45 minutes and a roles-only redeploy up to an hour. Do not use ludus range logs -f or other follow commands, which never exit. Read ludus range logs once the deploy ends. A recap line `failed=0` per host is the real success signal.
 Some things only the user can do (see "What you cannot do"). When you hit one, write it under a BLOCKED heading in PROGRESS.md, work on anything else that is not blocked, and stop only when nothing else is left.
 Stop when the definition of done is met, or after 5 failed attempts at the same problem. Then write the final report to REPORT.md.
 Being unattended does not widen your limits. The Rules section still applies.
@@ -20,7 +20,7 @@ You run as Linux user claude on the Ludus server (a homelab VM, safe to rebuild;
 The Ludus CLI is authenticated as Ludus user CLAUDEAGENT (non-admin) through LUDUS_API_KEY. LUDUS_URL is https://127.0.0.1:8080. Never print, log, or commit the API key.
 Range number: 1. Range network 10.1.0.0/16. Every IP below is 10.1.<vlan>.<last octet>.
 VM names in Proxmox start with the range ID, for example CLAUDEAGENT-GIRAFFE. Confirm with sudo qm list.
-Range config: the Ludus YAML file in this repo (ls *.yml *.yaml).
+Range config: `range-config.yaml` in this repo.
 Other docs in the repo: README.md (full details and vulnerability tables), SETUP.md, ARCHITECTURE.md, DEMO.md, BLUETEAM.md, WAZUH.md.
 Ludus flags vary by version. If a command fails, run it with --help.
 What you cannot do
@@ -50,9 +50,9 @@ Where	Account	Password
 Windows local admin	Administrator	ZooTime!
 Domain admin	ZOOLAND\domainadmin	ZooTime!
 Domain employees (15 documented)	jsmith, bwilson, mchen, mlopez, rthomas, and others	ZooLand2025!
-Linux root (PENGUIN, OTTER, FLAMINGO, HIPPO)	root	ZooTime!
+Linux root (PENGUIN, OTTER, FLAMINGO, HIPPO)	root	ZooTime! (SSH root password login is refused by sshd defaults; use localuser + sudo)
 Linux weak users	admin / admin, ftpuser / ftpuser, mail / mail, webadmin / password, dbadmin / password, user / password	see left
-Ludus Linux default	debian	debian
+Ludus Linux default	localuser	password (passwordless sudo; debian/debian does not work)
 Kali	kali	kali
 MariaDB	root / password, admin / admin, dbuser / dbuser	see left
 CrazyRhino app	admin / admin123, johndoe / password123	see left
@@ -69,13 +69,13 @@ ludus range status
 ludus range errors                                        # first stop when a deploy fails
 ludus range logs                                          # full Ansible output
 Before the first deploy, check ludus templates list (all five required templates built) and ludus ansible roles list (all ludus_ccdc_* roles present). If a role is missing and its folder is in roles/, register it with ludus ansible role add -d roles/<role-name>.
-Write tests/check.py (see Definition of done), then deploy.
+tests/check.py already exists (see Definition of done); run it after each deploy.
 If a deploy fails, read ludus range errors, then ludus range logs, and find the failing Ansible task.
 Fix the cause in the YAML or the ludus_ccdc_* role. After editing a role, re-register it with ludus ansible role add -d <role-dir> and redeploy with -t user-defined-roles.
 Run python3 tests/check.py.
 Commit the fix, update PROGRESS.md, and repeat from step 3.
 
-Prefer partial redeploys over full ones. Do a full destroy and rebuild only when a VM definition changed (template, RAM, CPUs, IP, VLAN) or the range is badly broken, and note it in PROGRESS.md.
+Prefer partial redeploys over full ones; for a single role use `-t user-defined-roles -l CLAUDEAGENT-<VM> --only-roles <role>`. A full destroy and redeploy can still surface bugs that partial runs hide, so do one before declaring done. Do a full destroy and rebuild only when a VM definition changed (template, RAM, CPUs, IP, VLAN) or the range is badly broken, and note it in PROGRESS.md.
 
 Reaching the VMs
 
@@ -86,7 +86,7 @@ bash
    sudo qm list
    sudo qm guest exec <vmid> -- <command>
 
-The agent may not answer while a VM is still booting. Wait and retry. 2. Run tests from JAGUAR. VLAN 99 can reach all of VLAN 10, so run the checks on JAGUAR through qm guest exec or SSH. 3. Direct from this host: ssh for Linux and pywinrm (port 5985) for Windows, if ping 10.1.10.7 works. 4. Screen problems (Windows login screens, hung installers):
+The agent may not answer while a VM is still booting. Wait and retry. 2. Run tests from JAGUAR. VLAN 99 can reach all of VLAN 10, so run the checks on JAGUAR through qm guest exec or SSH. 3. Direct from this host (works here, try this first): ssh for Linux and pywinrm over HTTPS port 5986 for Windows, if ping 10.1.10.7 works. 4. Screen problems (Windows login screens, hung installers):
 
 bash
    echo "screendump /tmp/screen.ppm" | sudo qm monitor <vmid>
@@ -98,16 +98,16 @@ Definition of done
 
 All of these must be true:
 
-ludus range deploy completes with no errors.
+ludus range deploy completes with no errors. (A skip warning from ludus_ccdc_blueteam_access counts as clean for a non-admin deploy, but real blue team access still needs an admin.)
 All 15 scoring checks pass (900 points per round, listed below).
 Every intentional vulnerability in the next section is still present.
 python3 tests/check.py exits 0.
 
-Write tests/check.py yourself at the start. It should check the 15 scoring services and confirm each intentional vulnerability exists, print which check failed, and exit non-zero on any failure.
+tests/check.py exists; extend it when checks change. `python3 tests/check.py --strict` (SKIP counts as failure) is the done check. It should check the 15 scoring services and confirm each intentional vulnerability exists, print which check failed, and exit non-zero on any failure.
 
 Scoring engine checks
 
-The engine on SCORESVR polls every 30 seconds. Dashboard: http://10.1.99.17:8080/. It is a Flask app (scoring_engine.service, user scoring) with its database at /opt/scoring_engine/scoring.db.
+The engine on SCORESVR polls every 30 seconds. Dashboard: http://10.1.99.17:8080/. It is a Flask app (scoring_engine.service, user scoring, code in /opt/scoring_engine) with its database at /opt/scoring_engine/scores.db. Credentialed checks rotate accounts round-robin, one per round; each account's password can be set from the dashboard key button.
 
 Check	Points
 HTTP CrazyRhino (PENGUIN:80)	100
@@ -116,26 +116,28 @@ Kerberos (GIRAFFE:88)	100
 DNS resolution (GIRAFFE:53)	100
 SMTP open relay (FLAMINGO:25)	75
 MySQL (HIPPO:3306)	75
-IMAP login, jsmith (FLAMINGO:143)	50
+IMAP login, rotates jsmith/bwilson/mchen (FLAMINGO:143)	50
 POP3 banner (FLAMINGO:110)	50
 SMB (ZEBRA:445)	50
-FTP login, mlopez (OTTER:21)	50
-RDP, jsmith (MEERKAT:3389)	50
+FTP login, rotates mlopez/rthomas (OTTER:21)	50
+RDP, rotates jsmith/bwilson/mchen/mlopez/rthomas (MEERKAT:3389)	50
 SSH banner on PENGUIN, HIPPO, FLAMINGO, OTTER (:22)	25 each
 Vulnerabilities that must stay
-GIRAFFE: DNS zone transfer (AXFR) allowed to anyone, recursion open, no DNSSEC, DNS logging off. The 12 hidden AD accounts exist.
+GIRAFFE: DNS zone transfer (AXFR) allowed to anyone, recursion open, no DNSSEC, DNS logging off. The 12 hidden AD accounts exist (check.py reports 13 undocumented, because domainadmin counts too).
 ZEBRA: SMBv1 on, Everyone Full Control on Public and Shared, guest access on, firewall off, credential files in the shares.
 PENGUIN: /api/debug leaks env vars, SQL injection in ?search=, admin / admin123, IDOR on /api/orders/:orderNumber, no rate limiting, HTTP only, X-Powered-By: Express, /opt/crazyrhino/backup_credentials.txt, UFW off.
-OTTER: anonymous FTP with upload, no TLS, no chroot, world-writable /srv/ftp, vsftpd version in banner, iptables open.
+OTTER: anonymous FTP with upload, no TLS, no chroot, world-writable FTP dirs (/srv/ftp/pub, upload, incoming are 777; /srv/ftp itself must stay root-owned because vsftpd refuses an anonymous chroot root that is writable), vsftpd version in banner, iptables open.
 FLAMINGO: open SMTP relay, no SMTP auth, no TLS on Postfix or Dovecot, mynetworks = 0.0.0.0/0, plaintext IMAP/POP3 auth, iptables open.
-HIPPO: MariaDB bound to 0.0.0.0, root@% login with password password, LOAD DATA LOCAL enabled, open test database, PII in ccdc_company.employees, iptables open.
+HIPPO: MariaDB bound to 0.0.0.0, root@% login with password password, LOAD DATA LOCAL enabled, open test database (the role creates testuser/testuser; README says anonymous ''@'%'. check.py accepts either; decision for the owner), PII in ccdc_company.employees, iptables open.
 Rules
 Do not change Proxmox networking, iptables on the Proxmox host, or Ludus server config.
 Do not run ludus user, ludus-admin, or any command that affects other users' ranges.
-The ludus_ccdc_blueteam_access role runs against the Proxmox host (creates the BlueTeam@pve user and the ZooLand-BlueTeam pool). Only touch it if it is the cause of a failure.
+The ludus_ccdc_blueteam_access role runs against the Proxmox host (creates the BlueTeam@pve user and grants PVEVMUser on each blue team VM; no pool, see Notes). Only touch it if it is the cause of a failure.
 Do not remove or weaken a vulnerability to make a test pass. If a check fails because of a vulnerability, record it in REPORT.md instead.
 Do not edit files outside this repo, except temporary files in /tmp.
-Do not use rm -rf, force-push, or modify other users' home directories.
+Do not use rm -rf, force-push, or modify other users' home directories. `ludus range rm` on your own range is allowed when a full rebuild is needed.
+Never git push: no credentials are configured here and the user pushes manually.
+If a user is interactively present in the session, ask before outward-facing or hard-to-reverse actions (push, deleting things). Unattended runs follow the Autonomy rules and do not ask.
 Do not paste the Ludus API key into any file, log, or commit.
 Git
 Work on the claude-tuning branch. Never commit to main and never force-push.
@@ -158,6 +160,9 @@ Linux SSH: `localuser` / `password` with passwordless sudo (`debian`/`debian` an
 `ludus ansible role add -d` does NOT overwrite an already-registered role; always add `-f`.
 `ludus range status` can show a stale ERROR/DEPLOYING right after a deploy starts; wait before polling.
 `range-config.yaml` `network.always_blocked_networks` must not cover the range's own 10.<N>.0.0/16 (Ludus emits it before the user rules and it breaks VLAN99->VLAN10 and router DNS). It lists 10/8 minus 10.1.0.0/16 and must be regenerated if the range number changes.
-`ludus_ccdc_blueteam_access` needs a Proxmox admin (pveum). It grants PVEVMUser per VM (/vms/<id>); VMs already sit in the Ludus user pool, so they cannot join a second pool. Non-admin deploys will show this one error.
+`ludus_ccdc_blueteam_access` needs a Proxmox admin (pveum). It grants PVEVMUser per VM (/vms/<id>); VMs already sit in the Ludus user pool, so they cannot join a second pool. Without Proxmox rights the role probes, skips and prints a WARNING, so non-admin deploys finish clean; an admin must apply the pveum steps (after a rebuild with new VM IDs, redo the ACL grant).
 The scoring engine rotates accounts round-robin per round (FTP 2, IMAP 3, RDP 5); passwords for each are set from the dashboard key button.
 `python3 tests/check.py --strict` is the definition-of-done check (exit 0 = 900/900 scoring, all vulnerability checks present).
+Gotchas: Flask is not installed on the Ludus host; test the scoring engine in a temporary venv under /tmp. config.py guesses the range ID from the local IP, so running the engine code on the Ludus host picks the wrong network (it needs to run on SCORESVR, or patch the hosts).
+In role PowerShell scripts, put passwords in single quotes: a `$` inside double quotes silently truncated one ("C00p3r$IT9"). `win_powershell` swallows non-terminating errors unless `error_action: stop` is set.
+`ludus range errors` always lists a ZEBRA WinRM connection error that Ansible rescues; check the recap for failed=0 before chasing it.
