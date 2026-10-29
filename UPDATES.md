@@ -215,3 +215,32 @@ Previous SETUP.md only listed prerequisites without build instructions.
 **Files:** `UPDATES.md` (this file)
 
 Established this log to track all changes to the range going forward.
+
+---
+
+## 2026-10-28
+
+Fresh-deploy test pass on a non-admin Ludus user. Everything below is on branch `claude-tuning`; earlier entries that mention a `ZooLand-BlueTeam` pool or a plain `10.0.0.0/8` block are superseded by this entry.
+
+### Fix: `always_blocked_networks` blocked the range's own network
+**Files:** `range-config.yaml`
+`10.0.0.0/8` covered `10.1.0.0/16`, so VLAN 99 -> VLAN 10 traffic and router DNS were rejected (scoring engine saw 0/15). The list now covers 10/8 except the range's own /16.
+
+### Fix: roles
+- `ludus_ccdc_domain_users` (GIRAFFE): `New-ADUser` needed `-Name`, errors were swallowed, and `C00p3r$IT9` lost `$IT9` in a double-quoted string (now single quotes).
+- `ludus_ccdc_file_server` (ZEBRA): reboot so the SMBv1 driver exists before enabling it.
+- `ludus_ccdc_mail_server` (FLAMINGO): `smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination` (docs previously claimed `permit_all` plus a recipient-restrictions setting the role never had; a bare `permit` crashed smtpd); `mynetworks = 0.0.0.0/0` keeps it an open relay.
+- `ludus_ccdc_ftp_server` (OTTER): `/srv/ftp` is root-owned (vsftpd refuses a writable anonymous root); pub/upload/incoming stay 777.
+- `ludus_ccdc_web_server` (PENGUIN): frontend build runs with `DISABLE_ESLINT_PLUGIN=true`.
+- Linux roles set public DNS first (now redundant after the network fix, harmless).
+
+### Change: scoring engine rotates accounts
+**Files:** `scoring_engine/*`, `roles/ludus_ccdc_scoring_engine/files/*`
+IMAP, FTP and RDP checks use one account per round (IMAP 3, FTP 2, RDP 5). The dashboard key button now shows every rotation account with its own password field. RDP check implements NTLM-sealed CredSSP so correct domain logins pass on Server 2022.
+
+### Change: `ludus_ccdc_blueteam_access`
+Grants `PVEVMUser` on each blue team VM (`/vms/<id>`) instead of using a pool (the VMs already belong to the Ludus user pool). Without Proxmox admin rights it prints a warning and skips, so non-admin deploys finish clean.
+
+### Docs
+HIPPO's open test database is `testuser` / `testuser` (not anonymous). `tests/check.py` added (15 scoring checks + 31 vulnerability checks). `CLAUDE.md`, `README.md`, `SETUP.md`, `ARCHITECTURE.md` and `VULNERABILITIES.md` updated to match.
+

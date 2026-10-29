@@ -274,7 +274,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 **FTP Directory Structure:**
 
 ```
-/srv/ftp/               (anonymous root, world-writable)
+/srv/ftp/               (anonymous root, root-owned; vsftpd refuses a writable anonymous root)
 ├── pub/
 │   ├── readme.txt      ("Public FTP files - CCDC Practice Range")
 │   └── backup_notes.txt ("Backup credentials - admin:admin, root:ZooTime!, ftpuser:ftpuser")
@@ -290,7 +290,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | 1 | **Anonymous access enabled** | `anonymous_enable=YES` with upload, mkdir, and delete permissions | `/etc/vsftpd.conf` |
 | 2 | **No TLS/SSL** | `ssl_enable=NO` — credentials transmitted in cleartext | `/etc/vsftpd.conf` |
 | 3 | **No chroot** | `chroot_local_user=NO` — users can traverse entire filesystem | `/etc/vsftpd.conf` |
-| 4 | **World-writable FTP root** | `chmod -R 777 /srv/ftp` | Directory permissions |
+| 4 | **World-writable FTP directories** | `chmod -R 777` on `/srv/ftp/pub`, `/srv/ftp/upload`, `/srv/ftp/incoming` (`/srv/ftp` itself stays root-owned so anonymous login works) | Directory permissions |
 | 5 | **umask 000** | `anon_umask=000`, `local_umask=000` — all new files are world-writable | `/etc/vsftpd.conf` |
 | 6 | **FTP bounce enabled** | `pasv_promiscuous=YES`, `port_promiscuous=YES` | `/etc/vsftpd.conf` |
 | 7 | **Version in banner** | `ftpd_banner=Welcome to CCDC Practice FTP Server (vsftpd 3.0.5)` | `/etc/vsftpd.conf` |
@@ -328,7 +328,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 
 | # | Vulnerability | Technical Detail | Config Location |
 |---|---------------|------------------|-----------------|
-| 1 | **Open SMTP relay** | `smtpd_relay_restrictions = permit_all`, `smtpd_recipient_restrictions = permit_all` — accepts and relays mail from anyone | `/etc/postfix/main.cf` |
+| 1 | **Open SMTP relay** | `smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination` with `mynetworks = 0.0.0.0/0` — every client counts as trusted, so Postfix accepts and relays mail from anyone | `/etc/postfix/main.cf` |
 | 2 | **No SMTP authentication** | `smtpd_sasl_auth_enable = no` — no auth required to send mail | `/etc/postfix/main.cf` |
 | 3 | **No TLS (Postfix)** | `smtpd_tls_security_level = none` — all SMTP traffic in cleartext | `/etc/postfix/main.cf` |
 | 4 | **mynetworks = 0.0.0.0/0** | Treats the entire internet as a trusted network | `/etc/postfix/main.cf` |
@@ -445,6 +445,8 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 
 - Polls all **15 services** every **30 seconds**
 - Scores each check pass/fail with point values ranging from 25–100 pts
+- Login checks (IMAP, FTP, RDP) rotate through several accounts, one per round, so every account is exercised. If blue team changes a password, set the new one on the dashboard: click the key icon on that service and enter a password for each account on the rotation (blank fields are left unchanged). Until it is updated, that account's turn fails.
+- Stores results in `/opt/scoring_engine/scores.db`
 - Auto-detects the range ID from the scoring machine's `10.X.99.Y` IP
 - Live dashboard available at **`http://10.X.99.17:8080/`** from VLAN 10 machines (port 8080 is permitted through the firewall)
 
@@ -456,11 +458,11 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 | DNS Resolution (GIRAFFE:53) | 100 |
 | SMTP Open Relay (FLAMINGO:25) | 75 |
 | MySQL Database (HIPPO:3306) | 75 |
-| IMAP Login (FLAMINGO:143) — `jsmith` | 50 |
+| IMAP Login (FLAMINGO:143) — rotates `jsmith`, `bwilson`, `mchen` | 50 |
 | POP3 Banner (FLAMINGO:110) | 50 |
 | SMB File Server (ZEBRA:445) | 50 |
-| FTP Login (OTTER:21) — `mlopez` | 50 |
-| RDP Workstation (MEERKAT:3389) — `jsmith` | 50 |
+| FTP Login (OTTER:21) — rotates `mlopez`, `rthomas` | 50 |
+| RDP Workstation (MEERKAT:3389) — rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas` | 50 |
 | SSH Banner (PENGUIN:22) | 25 |
 | SSH Banner (HIPPO:22) | 25 |
 | SSH Banner (FLAMINGO:22) | 25 |
@@ -510,7 +512,7 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 - Credentials in plaintext files on FTP and SMB shares
 
 ### Access Control
-- World-writable FTP root (777)
+- World-writable FTP directories (777 on pub, upload, incoming)
 - Everyone Full Control on all SMB shares
 - No chroot on FTP (full filesystem traversal)
 - `LOAD DATA LOCAL` enabled in MySQL

@@ -67,7 +67,7 @@ system the setting lives.
 | 1 | **Anonymous access enabled** | `anonymous_enable=YES` with upload, mkdir, and delete permissions | `/etc/vsftpd.conf` |
 | 2 | **No TLS/SSL** | `ssl_enable=NO` — credentials transmitted in cleartext | `/etc/vsftpd.conf` |
 | 3 | **No chroot** | `chroot_local_user=NO` — users can traverse entire filesystem | `/etc/vsftpd.conf` |
-| 4 | **World-writable FTP root** | `chmod -R 777 /srv/ftp` | Directory permissions |
+| 4 | **World-writable FTP directories** | `chmod -R 777` on `/srv/ftp/pub`, `/srv/ftp/upload`, `/srv/ftp/incoming` (`/srv/ftp` itself stays root-owned so anonymous login works) | Directory permissions |
 | 5 | **umask 000** | `anon_umask=000`, `local_umask=000` — all new files are world-writable | `/etc/vsftpd.conf` |
 | 6 | **FTP bounce enabled** | `pasv_promiscuous=YES`, `port_promiscuous=YES` | `/etc/vsftpd.conf` |
 | 7 | **Version in banner** | `ftpd_banner` discloses `vsftpd 3.0.5` | `/etc/vsftpd.conf` |
@@ -81,7 +81,7 @@ system the setting lives.
 
 | # | Vulnerability | Technical Detail | Config Location |
 |---|---------------|------------------|-----------------|
-| 1 | **Open SMTP relay** | `smtpd_relay_restrictions = permit_all`, `smtpd_recipient_restrictions = permit_all` — accepts and relays mail from anyone | `/etc/postfix/main.cf` |
+| 1 | **Open SMTP relay** | `smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination` with `mynetworks = 0.0.0.0/0` — every client counts as trusted, so Postfix accepts and relays mail from anyone | `/etc/postfix/main.cf` |
 | 2 | **No SMTP authentication** | `smtpd_sasl_auth_enable = no` — no auth required to send mail | `/etc/postfix/main.cf` |
 | 3 | **No TLS (Postfix)** | `smtpd_tls_security_level = none` — all SMTP traffic in cleartext | `/etc/postfix/main.cf` |
 | 4 | **mynetworks = 0.0.0.0/0** | Entire internet treated as a trusted network | `/etc/postfix/main.cf` |
@@ -103,7 +103,7 @@ system the setting lives.
 | 4 | **Weak admin account** | `admin:admin` with `ALL PRIVILEGES` and `GRANT OPTION` | MySQL user grants |
 | 5 | **Weak app user** | `dbuser:dbuser` with `ALL PRIVILEGES` on everything | MySQL user grants |
 | 6 | **LOAD DATA LOCAL enabled** | `local-infile = 1` — server-side file reads via SQL | `/etc/mysql/mariadb.conf.d/99-insecure.cnf` |
-| 7 | **Test database open** | `test` database with `GRANT ALL` to anonymous users (`''@'%'`) | MySQL user grants |
+| 7 | **Test database open** | `test` database with `GRANT ALL` to `testuser` / `testuser` from any host (`'testuser'@'%'`) | MySQL user grants |
 | 8 | **PII in database** | SSNs and salaries stored in plaintext in `ccdc_company.employees` | `ccdc_company` database |
 | 9 | **Firewall disabled** | iptables flushed, all policies set to ACCEPT | iptables rules |
 | 10 | **Weak OS accounts** | `admin:admin`, `dbadmin:password`, `root:ZooTime!` | `/etc/shadow` |

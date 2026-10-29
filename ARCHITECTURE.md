@@ -150,7 +150,7 @@ Each role is a self-contained Ansible role that configures one service and inten
 
 | Role | Target VM | What it does |
 |------|-----------|--------------|
-| `ludus_ccdc_domain_users` | GIRAFFE | Creates 27 domain accounts (domainadmin + 15 standard employees + 12 hidden accounts with 3 DA); adds DNS A records; configures DNS vulnerabilities (open zone transfer, recursion) |
+| `ludus_ccdc_domain_users` | GIRAFFE | Creates 28 domain accounts (domainadmin + 15 standard employees + 12 hidden accounts with 3 DA); adds DNS A records; configures DNS vulnerabilities (open zone transfer, recursion) |
 | `ludus_ccdc_web_server` | PENGUIN | Installs Docker; deploys CrazyRhino React+Node.js store; creates vulnerable docker-compose with hardcoded JWT secret; disables UFW |
 | `ludus_ccdc_db_server` | HIPPO | Installs MariaDB; binds to 0.0.0.0; sets weak root password; grants remote root login; creates `ccdc_company` database with employee PII |
 | `ludus_ccdc_file_server` | ZEBRA | Enables SMBv1; creates Public and Shared SMB shares with Everyone Full Control; enables Guest account; disables Windows Firewall |
@@ -193,16 +193,16 @@ The scoring engine is the most important piece of infrastructure for CCDC practi
 | Service | VM | Port | Check Method |
 |---------|-----|------|--------------|
 | HTTP — CrazyRhino store | PENGUIN | 80 | HTTP GET, validates store content in response body |
-| FTP — authenticated login | OTTER | 21 | FTP login as `mlopez` / `ZooLand2025!` |
+| FTP — authenticated login | OTTER | 21 | FTP login, rotating `mlopez` / `rthomas` (`ZooLand2025!`) |
 | SMTP — mail relay | FLAMINGO | 25 | Banner read + EHLO handshake |
-| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN as `jsmith` / `ZooLand2025!` |
+| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN, rotating `jsmith` / `bwilson` / `mchen` (`ZooLand2025!`) |
 | POP3 — banner | FLAMINGO | 110 | Reads `+OK` banner |
 | DNS — A record resolution | GIRAFFE | 53 | Resolves `web.zooland.local`, validates expected IP |
 | MySQL — TCP handshake | HIPPO | 3306 | Reads MySQL server greeting banner |
 | SMB — negotiate | ZEBRA | 445 | SMB negotiate protocol response |
 | LDAP — anonymous bind | GIRAFFE | 389 | LDAPv3 anonymous bind |
 | Kerberos — TCP connect | GIRAFFE | 88 | TCP connection to KDC |
-| RDP — NLA login | MEERKAT | 3389 | CredSSP/NTLMv2 login as `jsmith` |
+| RDP — NLA login | MEERKAT | 3389 | CredSSP/NTLMv2 login, rotating `jsmith` / `bwilson` / `mchen` / `mlopez` / `rthomas` |
 | SSH — banner | PENGUIN | 22 | SSH banner read |
 | SSH — banner | HIPPO | 22 | SSH banner read |
 | SSH — banner | FLAMINGO | 22 | SSH banner read |

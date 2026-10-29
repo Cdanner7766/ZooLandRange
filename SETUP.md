@@ -115,7 +115,7 @@ sysctl -p /etc/sysctl.d/99-bridge.conf
 /sbin/netfilter-persistent save
 ```
 
-> **Note:** These rules only need to be applied once per Ludus host — they are not range-specific and survive reboots. The `range-config.yaml` also includes `always_blocked_networks` which enforces the same isolation at the Debian router level on every deploy, providing defense in depth.
+> **Note:** These rules only need to be applied once per Ludus host — they are not range-specific and survive reboots. The `range-config.yaml` also includes `always_blocked_networks` which enforces the same isolation at the Debian router level on every deploy, providing defense in depth. The `range-config.yaml` list covers all of `10.0.0.0/8` **except this range's own `10.<N>.0.0/16`** (a plain `10.0.0.0/8` would also reject VLAN 99 -> VLAN 10 traffic and DNS from the router, because Ludus applies it before the user rules). If you change the range number, regenerate that list.
 
 ## Step 5: Deploy the range
 
@@ -256,7 +256,13 @@ sudo journalctl -u scoring_engine -f
 | SMB — File Server | ZEBRA | .15 | 445 | SMBv1/v2 negotiate | 50 |
 | FTP — Login (rotates `mlopez`, `rthomas`) | OTTER | .29 | 21 | FTP authenticated login | 50 |
 | RDP — Workstation | MEERKAT | .12 | 3389 | CredSSP/NLA login (NTLMv2; rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`) | 50 |
-| **Total max per round** | | | | | **800** |
+| SSH — banner | PENGUIN | .23 | 22 | SSH banner read | 25 |
+| SSH — banner | HIPPO | .41 | 22 | SSH banner read | 25 |
+| SSH — banner | FLAMINGO | .38 | 22 | SSH banner read | 25 |
+| SSH — banner | OTTER | .29 | 22 | SSH banner read | 25 |
+| **Total max per round** | | | | | **900** |
+
+Login checks (IMAP, FTP, RDP) rotate through the accounts listed, one per round. If blue team changes a password, update it on the dashboard (key icon on the service); each rotation account has its own password field.
 
 ## Step 6: Validate the Deployment
 
