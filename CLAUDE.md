@@ -49,7 +49,7 @@ Credentials (lab only, intentionally weak)
 Where	Account	Password
 Windows local admin	Administrator	ZooTime!
 Domain admin	ZOOLAND\domainadmin	ZooTime!
-Domain employees (15 documented)	each has its own basic weak password (README.md table); jsmith/Welcome123, bwilson/Spring2025, mchen/Monkey123, mlopez/Football1, rthomas/Baseball1 are the five scoring-rotation accounts	see left. Only root/Administrator/domainadmin use ZooTime!
+Domain employees (15 documented)	each has its own basic weak password (README.md table); jsmith/Welcome123, bwilson/Spring2025, mchen/Monkey123, mlopez/Football1, rthomas/Baseball1 are the five scoring-rotation accounts	see left (exceptions: ajohnson/sunny, tlee/dragon, kbrown/letmein). Only root/Administrator/domainadmin use ZooTime!
 Linux root (PENGUIN, OTTER, FLAMINGO, HIPPO)	root	ZooTime! (SSH root password login is refused by sshd defaults; use localuser + sudo)
 Linux weak users	admin / admin, ftpuser / ftpuser, mail / mail, webadmin / password, dbadmin / password, user / password	see left
 Ludus Linux default	localuser	password (passwordless sudo; debian/debian does not work)
@@ -123,7 +123,7 @@ FTP login, rotates mlopez/rthomas/jsmith/bwilson/mchen (OTTER:21)	50
 RDP, rotates jsmith/bwilson/mchen/mlopez/rthomas (MEERKAT:3389)	50
 SSH banner on PENGUIN, HIPPO, FLAMINGO, OTTER (:22)	25 each
 Vulnerabilities that must stay
-GIRAFFE: DNS zone transfer (AXFR) allowed to anyone, recursion open, no DNSSEC, DNS logging off. The 12 hidden AD accounts exist (check.py reports 13 undocumented, because domainadmin counts too).
+GIRAFFE: DNS zone transfer (AXFR) allowed to anyone, recursion open, no DNSSEC, DNS logging off, weak domain password policy (min length 5, complexity off, no lockout; ajohnson/sunny, tlee/dragon, kbrown/letmein are 5-7 lowercase letters). The 12 hidden AD accounts exist (check.py reports 13 undocumented, because domainadmin counts too).
 ZEBRA: SMBv1 on, Everyone Full Control on Public and Shared, guest access on, firewall off, credential files in the shares.
 PENGUIN: /api/debug leaks env vars, SQL injection in ?search=, admin / admin123, IDOR on /api/orders/:orderNumber, no rate limiting, HTTP only, X-Powered-By: Express, /opt/crazyrhino/backup_credentials.txt, UFW off.
 OTTER: anonymous FTP with upload, no TLS, no chroot, world-writable FTP dirs (/srv/ftp/pub, upload, incoming are 777; /srv/ftp itself must stay root-owned because vsftpd refuses an anonymous chroot root that is writable), vsftpd version in banner, iptables open.

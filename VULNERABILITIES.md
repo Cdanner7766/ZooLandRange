@@ -14,6 +14,7 @@ system the setting lives.
 | 2 | **Open recursive resolver** | Recursion enabled globally — DNS amplification attack vector | `Set-DnsServerRecursion -Enable $true` |
 | 3 | **No DNSSEC** | No DNSSEC validation — DNS cache poisoning possible | DNS server settings |
 | 4 | **DNS logging disabled** | `Set-DnsServerDiagnostics -All $false` — no audit trail for queries | DNS diagnostics |
+| 5 | **Weak domain password policy** | Minimum length 5, complexity off, no account lockout — passwords can be guessed or sprayed without limit; `ajohnson` (`sunny`), `tlee` (`dragon`) and `kbrown` (`letmein`) use 5-7 lowercase letters | `Set-ADDefaultDomainPasswordPolicy` |
 
 ---
 

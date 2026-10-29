@@ -75,11 +75,11 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | Michelle Chen | `mchen` | `Monkey123` | Finance *(FTP + IMAP + RDP scoring rotation)* |
 | Maria Lopez | `mlopez` | `Football1` | Logistics *(FTP + IMAP + RDP scoring rotation)* |
 | Robert Thomas | `rthomas` | `Baseball1` | Warehouse *(FTP + IMAP + RDP scoring rotation)* |
-| Alex Johnson | `ajohnson` | `Sunshine1` | Marketing |
-| Thomas Lee | `tlee` | `Dragon123` | Operations |
+| Alex Johnson | `ajohnson` | `sunny` | Marketing |
+| Thomas Lee | `tlee` | `dragon` | Operations |
 | Sarah Williams | `swilliams` | `Princess1` | Veterinary |
 | Patricia Garcia | `pgarcia` | `Iloveyou1` | Animal Care |
-| Kevin Brown | `kbrown` | `Letmein123` | Security |
+| Kevin Brown | `kbrown` | `letmein` | Security |
 | Lisa Martinez | `lmartinez` | `Soccer123` | Facilities |
 | David Jones | `djones` | `Master123` | Research |
 | Nicole Anderson | `nanderson` | `Shadow123` | Education |
@@ -101,7 +101,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | `ftp.zooland.local` | A | `10.X.10.29` |
 | `zooland.local` | MX | `mail.zooland.local` (priority 10) |
 
-**Vulnerabilities (DNS — applied by `ludus_ccdc_domain_users` role):**
+**Vulnerabilities (DNS and password policy — applied by `ludus_ccdc_domain_users` role):**
 
 | # | Vulnerability | Technical Detail | Config Location |
 |---|---------------|------------------|-----------------|
@@ -109,6 +109,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | 2 | **Recursion enabled globally** | Open recursive resolver — DNS amplification attack vector | `Set-DnsServerRecursion -Enable $true` |
 | 3 | **No DNSSEC** | No DNSSEC validation — DNS cache poisoning possible | DNS server settings |
 | 4 | **DNS logging disabled** | `Set-DnsServerDiagnostics -All $false` — no audit trail for queries | DNS diagnostics |
+| 5 | **Weak domain password policy** | Minimum length 5, complexity off, no account lockout — passwords can be guessed or sprayed without limit; `ajohnson` (`sunny`), `tlee` (`dragon`) and `kbrown` (`letmein`) use 5-7 lowercase letters | `Set-ADDefaultDomainPasswordPolicy` |
 
 ---
 
@@ -535,7 +536,7 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 
 | Machine | Vulnerability Count |
 |---------|:-------------------:|
-| GIRAFFE (DC) | 4 |
+| GIRAFFE (DC) | 5 |
 | PENGUIN (Web/CrazyRhino) | 12 |
 | HIPPO (DB) | 10 |
 | ZEBRA (File) | 8 |

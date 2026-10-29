@@ -265,7 +265,7 @@ The FTP (2 accounts) and IMAP (3 accounts) login checks now rotate through the s
 ### Change: employee passwords are individual and basic; `ZooTime!` is admin/root only
 **Files:** `roles/ludus_ccdc_domain_users`, `roles/ludus_ccdc_ftp_server`, `roles/ludus_ccdc_mail_server`, `scoring_engine/config.py` (and role copy), `tests/check.py`, `range-config.yaml` comments, docs
 
-The 15 documented domain employees no longer share `ZooLand2025!`. Each has a different, common wordlist-style password (all meet AD complexity):
+The 15 documented domain employees no longer share `ZooLand2025!`. Each has a different, common wordlist-style password (all met the previous AD complexity rule; see the later entry: complexity is now off):
 
 - `jsmith` / `Welcome123`
 - `bwilson` / `Spring2025`
@@ -290,3 +290,17 @@ The 15 documented domain employees no longer share `ZooLand2025!`. Each has a di
 - The 12 hidden accounts are unchanged.
 - Windows keeps accepting the *previous* password for NTLM logons (such as the RDP check) for up to 60 minutes after a reset, so on an already-deployed range the old password can still appear to work for that long.
 
+
+---
+
+## 2026-10-29 (policy)
+
+### Change: deliberately weak domain password policy, and three letter-only passwords
+**Files:** `roles/ludus_ccdc_domain_users/tasks/main.yml`, `tests/check.py`, `README.md`, `VULNERABILITIES.md`, `CLAUDE.md`
+
+The red team for this range has limited experience, so the domain is made an easier target. This is a new intentional GIRAFFE vulnerability (#5).
+
+- **Domain password policy** is now set explicitly by the role, before any account is created or reset: minimum length **5**, complexity **off**, account lockout **off** (threshold 0). Previously the range inherited the template default (minimum 7, complexity off, lockout off), which no role pinned. Minimum age (1 day), maximum age (42 days) and history (24) are untouched.
+- **Three employees now use 5-7 lowercase letters only:** `ajohnson` / `sunny`, `tlee` / `dragon`, `kbrown` / `letmein`. They are not scoring-rotation accounts. The other twelve employee passwords are unchanged.
+- `tests/check.py` has a new vulnerability check, "GIRAFFE weak password policy", so the range now has 32 vulnerability checks.
+- Note: after a password reset Windows accepts the old password for NTLM logons for up to 60 minutes, so on an already-deployed range the previous password can still work for that long.
