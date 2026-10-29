@@ -413,6 +413,29 @@ def main():
                 return ok(b.strip()[:60]) if b.startswith("SSH-") else bad(b[:60])
             record(S, f"SSH banner ({label}:22)", ssh_banner, 25)
 
+        # Every account the scoring engine rotates through must log in, otherwise that round
+        # scores 0 for the service. Uses the engine's own config and checks (0 pts: the 15
+        # checks above already cover the scoring total).
+        print("\n== Scoring rotation accounts (each must log in; 0 pts) ==")
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scoring_engine"))
+            import config as engine_config
+            import checks as engine_checks
+        except Exception as e:
+            engine_config = None
+            record("rotation", "scoring rotation accounts", lambda: skip(f"could not import scoring_engine: {e}"))
+        if engine_config:
+            for svc in engine_config.SERVICES:
+                if not svc.get("has_credentials"):
+                    continue
+                for acct in svc["users"]:
+                    def rot(svc=svc, acct=acct):
+                        s2 = dict(svc, host=f"10.{X}." + svc["host"].split(".", 2)[2],
+                                  _user=acct["user"], _pass=acct["pass"])
+                        up, msg = engine_checks.run_check(s2)
+                        return (ok if up else bad)(msg[:70])
+                    record("rotation", f"{svc['name']} login as {acct['user']}", rot)
+
     # ======================================================================
     if args.only in (None, "vuln"):
         print("\n== Vulnerability checks (must remain present) ==")
@@ -744,7 +767,10 @@ def main():
         earned = sum(r[4] for r in sc if r[2] == PASS)
         total = sum(r[4] for r in sc)
         print(f"  Scoring: {earned}/{total} points ({sum(1 for r in sc if r[2] == PASS)}/{len(sc)} checks)")
-    vu = [r for r in results if r[0] != "scoring"]
+    ro = [r for r in results if r[0] == "rotation"]
+    if ro:
+        print(f"  Rotation accounts logging in: {sum(1 for r in ro if r[2] == PASS)}/{len(ro)}")
+    vu = [r for r in results if r[0] not in ("scoring", "rotation")]
     if vu:
         print(f"  Vulnerabilities present: {sum(1 for r in vu if r[2] == PASS)}/{len(vu)}")
     nf = sum(1 for r in results if r[2] == FAIL)

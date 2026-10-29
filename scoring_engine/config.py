@@ -103,6 +103,9 @@ def _build_services():
             "users": [
                 {"user": "mlopez", "pass": "ZooLand2025!"},
                 {"user": "rthomas", "pass": "ZooLand2025!"},
+                {"user": "jsmith", "pass": "ZooLand2025!"},
+                {"user": "bwilson", "pass": "ZooLand2025!"},
+                {"user": "mchen", "pass": "ZooLand2025!"},
             ],
         },
         {
@@ -126,6 +129,8 @@ def _build_services():
                 {"user": "jsmith", "pass": "ZooLand2025!"},
                 {"user": "bwilson", "pass": "ZooLand2025!"},
                 {"user": "mchen", "pass": "ZooLand2025!"},
+                {"user": "mlopez", "pass": "ZooLand2025!"},
+                {"user": "rthomas", "pass": "ZooLand2025!"},
             ],
         },
         {

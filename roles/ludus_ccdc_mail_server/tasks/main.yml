@@ -159,23 +159,19 @@
   become: true
   ignore_errors: true
 
-# Scored employee accounts — jsmith is the IMAP scoring account
+# Scored employee accounts — the scoring engine rotates its IMAP login check
+# through all five, one per round (weak shared password, like the domain users).
 - name: "Create employee mail accounts"
   ansible.builtin.shell: |
-    useradd -m -s /bin/bash jsmith  2>/dev/null || true
-    useradd -m -s /bin/bash bwilson 2>/dev/null || true
-    useradd -m -s /bin/bash mchen   2>/dev/null || true
-    echo 'jsmith:ZooLand2025!'  | chpasswd
-    echo 'bwilson:ZooLand2025!' | chpasswd
-    echo 'mchen:ZooLand2025!'   | chpasswd
-    mkdir -p /home/jsmith/Maildir/{new,cur,tmp}
-    mkdir -p /home/bwilson/Maildir/{new,cur,tmp}
-    mkdir -p /home/mchen/Maildir/{new,cur,tmp}
-    chown -R jsmith:jsmith   /home/jsmith/Maildir
-    chown -R bwilson:bwilson /home/bwilson/Maildir
-    chown -R mchen:mchen     /home/mchen/Maildir
+    for u in jsmith bwilson mchen mlopez rthomas; do
+      id "$u" >/dev/null 2>&1 || useradd -m -s /bin/bash "$u"
+      echo "$u:ZooLand2025!" | chpasswd
+      mkdir -p /home/$u/Maildir/{new,cur,tmp}
+      chown -R $u:$u /home/$u/Maildir
+    done
   become: true
-  ignore_errors: true
+  args:
+    executable: /bin/bash
 
 # VULN: Disable firewall
 - name: "VULN - Disable firewall"

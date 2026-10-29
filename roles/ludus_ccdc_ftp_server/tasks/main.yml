@@ -138,20 +138,17 @@
   become: true
   ignore_errors: true
 
-# Create realistic employee FTP accounts
-# mlopez is used by the scoring engine for FTP checks (default credential).
-# rthomas is an additional employee that makes the server look realistic.
+# Create realistic employee FTP accounts (weak shared password, like the domain users).
+# The scoring engine rotates its FTP login check through all five, one per round.
 - name: "Create ZooLand Inc. employee FTP accounts"
   ansible.builtin.shell: |
-    useradd -m -s /bin/bash mlopez   2>/dev/null || true
-    useradd -m -s /bin/bash rthomas  2>/dev/null || true
-    echo 'mlopez:ZooLand2025!'  | chpasswd
-    echo 'rthomas:ZooLand2025!' | chpasswd
-    mkdir -p /home/mlopez/files /home/rthomas/files
-    chown -R mlopez:mlopez   /home/mlopez
-    chown -R rthomas:rthomas /home/rthomas
+    for u in mlopez rthomas jsmith bwilson mchen; do
+      id "$u" >/dev/null 2>&1 || useradd -m -s /bin/bash "$u"
+      echo "$u:ZooLand2025!" | chpasswd
+      mkdir -p /home/$u/files
+      chown -R $u:$u /home/$u
+    done
   become: true
-  ignore_errors: true
 
 # Ensure ftp user is not in vsftpd deny list
 - name: "Allow FTP users in PAM config"
@@ -159,8 +156,9 @@
     # Remove users from deny lists so they can log in via FTP
     sed -i '/^ftpuser$/d'  /etc/ftpusers 2>/dev/null || true
     sed -i '/^admin$/d'    /etc/ftpusers 2>/dev/null || true
-    sed -i '/^mlopez$/d'   /etc/ftpusers 2>/dev/null || true
-    sed -i '/^rthomas$/d'  /etc/ftpusers 2>/dev/null || true
+    for u in mlopez rthomas jsmith bwilson mchen; do
+      sed -i "/^$u\$/d" /etc/ftpusers 2>/dev/null || true
+    done
   become: true
 
 # VULN: Disable firewall
