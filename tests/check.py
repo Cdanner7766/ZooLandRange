@@ -465,6 +465,18 @@ def main():
             return ok("no DNSKEY published") if f["an"] == 0 else bad("DNSKEY present (zone is signed)")
         record(V, "GIRAFFE no DNSSEC", nodnssec)
 
+        def pwpolicy():
+            r = winrm(GIRAFFE, "Administrator", ADMIN_PW,
+                      "$p=Get-ADDefaultDomainPasswordPolicy; \"$($p.ComplexityEnabled) $($p.MinPasswordLength) $($p.LockoutThreshold)\"")
+            if r is None:
+                return skip("pywinrm not installed")
+            out = r[1]
+            parts = out.strip().split()
+            if len(parts) == 3 and parts[0] == "False" and parts[1].isdigit() and int(parts[1]) <= 5 and parts[2] == "0":
+                return ok(f"complexity off, min length {parts[1]}, no lockout")
+            return bad(f"policy is: {out.strip()[:60]}")
+        record(V, "GIRAFFE weak password policy (min 5, no complexity, no lockout)", pwpolicy)
+
         def dnslog():
             r = winrm(GIRAFFE, "Administrator", ADMIN_PW,
                       "$d=Get-DnsServerDiagnostics; if($d.Queries -or $d.Answers -or $d.Notifications -or $d.Updates){'LOGGING_ON'}else{'LOGGING_OFF'}")

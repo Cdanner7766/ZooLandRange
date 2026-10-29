@@ -1,8 +1,9 @@
 ---
 # Creates ZooLand Inc. employee AD accounts on the domain controller.
-# 27 accounts total:
+# 28 accounts total (plus the deliberately weak domain password policy set below):
 #   domainadmin           — domain admin service account (ZooTime!)
-#   15 standard employees — each has its own basic weak password (jsmith, bwilson, mchen, mlopez,
+#   15 standard employees — each has its own basic weak password; ajohnson, tlee and kbrown
+#                           use 5-7 lowercase letters only (jsmith, bwilson, mchen, mlopez,
 #                           rthomas, ajohnson, tlee, swilliams, pgarcia, kbrown,
 #                           lmartinez, djones, nanderson, cwilson, emiller)
 #   12 hidden employees   — individual passwords (mixed weak/mid-strength, not in BLUETEAM.md)
@@ -55,6 +56,21 @@
       # Secure option (DISABLED): Set-DnsServerDiagnostics -All $true
       Set-DnsServerDiagnostics -All $false
 
+# VULN: deliberately weak domain password policy. Applied before any account is created
+# or reset, because a password reset still has to satisfy the minimum length.
+# Complexity off, 5-character minimum, no account lockout (a lockout would stop brute-forcing).
+- name: "VULN - Weak domain password policy (5 chars, no complexity, no lockout)"
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      Set-ADDefaultDomainPasswordPolicy -Identity (Get-ADDomain).DistinguishedName `
+        -ComplexityEnabled $false `
+        -MinPasswordLength 5 `
+        -LockoutThreshold 0 `
+        -ReversibleEncryptionEnabled $false
+      $p = Get-ADDefaultDomainPasswordPolicy
+      Write-Output "Policy: complexity=$($p.ComplexityEnabled) minlen=$($p.MinPasswordLength) lockout=$($p.LockoutThreshold)"
+
 - name: "Set local Administrator password on GIRAFFE"
   ansible.windows.win_powershell:
     script: |
@@ -100,11 +116,11 @@
         @{ SamAccountName="mchen";      GivenName="Michelle";   Surname="Chen";      Description="Finance"; Password='Monkey123'},
         @{ SamAccountName="mlopez";     GivenName="Maria";      Surname="Lopez";     Description="Logistics"; Password='Football1'},
         @{ SamAccountName="rthomas";    GivenName="Robert";     Surname="Thomas";    Description="Warehouse"; Password='Baseball1'},
-        @{ SamAccountName="ajohnson";   GivenName="Alex";       Surname="Johnson";   Description="Marketing"; Password='Sunshine1'},
-        @{ SamAccountName="tlee";       GivenName="Thomas";     Surname="Lee";       Description="Operations"; Password='Dragon123'},
+        @{ SamAccountName="ajohnson";   GivenName="Alex";       Surname="Johnson";   Description="Marketing"; Password='sunny'},
+        @{ SamAccountName="tlee";       GivenName="Thomas";     Surname="Lee";       Description="Operations"; Password='dragon'},
         @{ SamAccountName="swilliams";  GivenName="Sarah";      Surname="Williams";  Description="Veterinary"; Password='Princess1'},
         @{ SamAccountName="pgarcia";    GivenName="Patricia";   Surname="Garcia";    Description="Animal Care"; Password='Iloveyou1'},
-        @{ SamAccountName="kbrown";     GivenName="Kevin";      Surname="Brown";     Description="Security"; Password='Letmein123'},
+        @{ SamAccountName="kbrown";     GivenName="Kevin";      Surname="Brown";     Description="Security"; Password='letmein'},
         @{ SamAccountName="lmartinez";  GivenName="Lisa";       Surname="Martinez";  Description="Facilities"; Password='Soccer123'},
         @{ SamAccountName="djones";     GivenName="David";      Surname="Jones";     Description="Research"; Password='Master123'},
         @{ SamAccountName="nanderson";  GivenName="Nicole";     Surname="Anderson";  Description="Education"; Password='Shadow123'},
