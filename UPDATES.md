@@ -258,3 +258,35 @@ The FTP (2 accounts) and IMAP (3 accounts) login checks now rotate through the s
 - `tests/check.py` has a new "Scoring rotation accounts" section: it logs in as every rotation account (15 total) using the engine's own checks. It is reported separately and does not change the 900-point total or the vulnerability count.
 - Updated: `README.md` (account tables, scoring table), `SETUP.md`, `ARCHITECTURE.md`, `DEMO.md`, `CLAUDE.md`. `README.md` also now lists the Ludus default account as `localuser` / `password` (was `debian` / `debian`).
 
+---
+
+## 2026-10-29 (later)
+
+### Change: employee passwords are individual and basic; `ZooTime!` is admin/root only
+**Files:** `roles/ludus_ccdc_domain_users`, `roles/ludus_ccdc_ftp_server`, `roles/ludus_ccdc_mail_server`, `scoring_engine/config.py` (and role copy), `tests/check.py`, `range-config.yaml` comments, docs
+
+The 15 documented domain employees no longer share `ZooLand2025!`. Each has a different, common wordlist-style password (all meet AD complexity):
+
+- `jsmith` / `Welcome123`
+- `bwilson` / `Spring2025`
+- `mchen` / `Monkey123`
+- `mlopez` / `Football1`
+- `rthomas` / `Baseball1`
+- `ajohnson` / `Sunshine1`
+- `tlee` / `Dragon123`
+- `swilliams` / `Princess1`
+- `pgarcia` / `Iloveyou1`
+- `kbrown` / `Letmein123`
+- `lmartinez` / `Soccer123`
+- `djones` / `Master123`
+- `nanderson` / `Shadow123`
+- `cwilson` / `Winter2025`
+- `emiller` / `Abc12345`
+
+- `ZooTime!` is now used only by `Administrator`, `domainadmin` and the Linux `root` accounts (this was already the case in the roles; docs now say so). The weak `admin`, `webadmin`, `dbadmin`, `ftpuser`, `mail`, `user` and `dbuser` accounts keep their own passwords.
+- The OS accounts on OTTER (FTP) and FLAMINGO (mail) for the five rotation employees use the same password as the domain account.
+- The domain role used to skip accounts that already existed, so a redeploy would not change their password. It now resets the password for existing employees too.
+- The scoring engine's default password for each rotation account matches; `tests/check.py` still verifies every rotation account logs in.
+- The 12 hidden accounts are unchanged.
+- Windows keeps accepting the *previous* password for NTLM logons (such as the RDP check) for up to 60 minutes after a reset, so on an already-deployed range the old password can still appear to work for that long.
+

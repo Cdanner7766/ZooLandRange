@@ -193,9 +193,9 @@ The scoring engine is the most important piece of infrastructure for CCDC practi
 | Service | VM | Port | Check Method |
 |---------|-----|------|--------------|
 | HTTP — CrazyRhino store | PENGUIN | 80 | HTTP GET, validates store content in response body |
-| FTP — authenticated login | OTTER | 21 | FTP login, rotating `mlopez` / `rthomas` / `jsmith` / `bwilson` / `mchen` (`ZooLand2025!`) |
+| FTP — authenticated login | OTTER | 21 | FTP login, rotating `mlopez` / `rthomas` / `jsmith` / `bwilson` / `mchen` (each with its own basic weak password) |
 | SMTP — mail relay | FLAMINGO | 25 | Banner read + EHLO handshake |
-| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN, rotating `jsmith` / `bwilson` / `mchen` / `mlopez` / `rthomas` (`ZooLand2025!`) |
+| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN, rotating `jsmith` / `bwilson` / `mchen` / `mlopez` / `rthomas` (each with its own basic weak password) |
 | POP3 — banner | FLAMINGO | 110 | Reads `+OK` banner |
 | DNS — A record resolution | GIRAFFE | 53 | Resolves `web.zooland.local`, validates expected IP |
 | MySQL — TCP handshake | HIPPO | 3306 | Reads MySQL server greeting banner |

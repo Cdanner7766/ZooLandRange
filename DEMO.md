@@ -229,7 +229,7 @@ telnet 10.X.10.38 143
 
 Then type each line (the `a` prefix is the IMAP tag — required):
 ```
-a LOGIN jsmith ZooLand2025!
+a LOGIN jsmith Welcome123
 a SELECT INBOX
 a FETCH 1 BODY[TEXT]
 a LOGOUT
@@ -252,7 +252,7 @@ telnet 10.X.10.38 110
 Then:
 ```
 USER jsmith
-PASS ZooLand2025!
+PASS Welcome123
 LIST
 RETR 1
 QUIT
@@ -272,7 +272,7 @@ python3 - <<'EOF'
 import imaplib, email
 
 M = imaplib.IMAP4("10.X.10.38", 143)
-M.login("jsmith", "ZooLand2025!")
+M.login("jsmith", "Welcome123")
 M.select("INBOX")
 
 status, data = M.search(None, "ALL")
@@ -384,7 +384,7 @@ bye             # disconnect
 ```bash
 ftp 10.X.10.29
 # Name: mlopez
-# Password: ZooLand2025!
+# Password: Football1
 ```
 
 ```
@@ -405,7 +405,7 @@ quit
 
 ```bash
 # Employee login
-lftp -u mlopez,ZooLand2025! 10.X.10.29
+lftp -u mlopez,Football1 10.X.10.29
 ls
 put /etc/hostname uploaded_hostname.txt
 quit
@@ -438,7 +438,7 @@ curl ftp://10.X.10.29/pub/backup_notes.txt
 smbclient -L //10.X.10.15 -N
 
 # List shares with domain user credentials
-smbclient -L //10.X.10.15 -U "zooland.local\\jsmith%ZooLand2025!"
+smbclient -L //10.X.10.15 -U "zooland.local\\jsmith%Welcome123"
 ```
 
 Expected output:
@@ -469,7 +469,7 @@ exit
 
 ```bash
 # As a domain user
-smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%ZooLand2025!"
+smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%Welcome123"
 
 # As the domain admin
 smbclient //10.X.10.15/Shared -U "zooland.local\\domainadmin%ZooTime!"
@@ -520,7 +520,7 @@ prompt should appear. Files in the share will be visible and editable.
 
 ```bash
 # Log in as domain employee jsmith
-xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland /cert:ignore
+xfreerdp /v:10.X.10.12 /u:jsmith /p:'Welcome123' /d:zooland /cert:ignore
 
 # Log in as domain admin
 xfreerdp /v:10.X.10.12 /u:domainadmin /p:ZooTime! /d:zooland /cert:ignore
@@ -529,7 +529,7 @@ xfreerdp /v:10.X.10.12 /u:domainadmin /p:ZooTime! /d:zooland /cert:ignore
 xfreerdp /v:10.X.10.12 /u:Administrator /p:ZooTime! /cert:ignore
 
 # Useful display options
-xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland \
+xfreerdp /v:10.X.10.12 /u:jsmith /p:'Welcome123' /d:zooland \
   /cert:ignore /w:1280 /h:800 /dynamic-resolution
 ```
 
@@ -559,7 +559,7 @@ On any Windows machine in the range (e.g. MEERKAT itself or ZEBRA), press
 mstsc /v:10.X.10.12
 ```
 
-Enter credentials: `zooland\jsmith` / `ZooLand2025!`
+Enter credentials: `zooland\jsmith` / `Welcome123`
 
 ---
 
@@ -666,8 +666,8 @@ description: IT Support
 ```bash
 ldapsearch -x \
   -H ldap://10.X.10.7 \
-  -D "CN=jsmith,CN=Users,DC=zooland,DC=local" \
-  -w 'ZooLand2025!' \
+  -D "jsmith@zooland.local" \
+  -w 'Welcome123' \
   -b "DC=zooland,DC=local" \
   "(objectClass=user)" \
   sAMAccountName mail department
@@ -714,10 +714,10 @@ ssh webadmin@10.X.10.23      # password: password
 
 # FTP server (OTTER)
 ssh ftpuser@10.X.10.29       # password: ftpuser
-ssh mlopez@10.X.10.29        # password: ZooLand2025!
+ssh mlopez@10.X.10.29        # password: Football1
 
 # Mail server (FLAMINGO)
-ssh jsmith@10.X.10.38        # password: ZooLand2025!
+ssh jsmith@10.X.10.38        # password: Welcome123
 
 # Database server (HIPPO)
 ssh admin@10.X.10.41         # password: admin
@@ -800,17 +800,17 @@ non-zero on any failure or skipped check.
 | Web API | PENGUIN | `10.X.10.23` | 5000 | `curl http://10.X.10.23:5000/api/health` |
 | FTP | OTTER | `10.X.10.29` | 21 | `ftp 10.X.10.29` (user: `anonymous`) |
 | SMTP | FLAMINGO | `10.X.10.38` | 25 | `swaks --to jsmith@zooland.local --from mlopez@zooland.local --server 10.X.10.38` |
-| IMAP | FLAMINGO | `10.X.10.38` | 143 | `telnet 10.X.10.38 143` then `a LOGIN jsmith ZooLand2025!` |
+| IMAP | FLAMINGO | `10.X.10.38` | 143 | `telnet 10.X.10.38 143` then `a LOGIN jsmith Welcome123` |
 | POP3 | FLAMINGO | `10.X.10.38` | 110 | `telnet 10.X.10.38 110` then `USER jsmith` |
 | MySQL | HIPPO | `10.X.10.41` | 3306 | `mysql -h 10.X.10.41 -u root -ppassword` |
 | SMB Public | ZEBRA | `10.X.10.15` | 445 | `smbclient //10.X.10.15/Public -N` |
-| SMB Shared | ZEBRA | `10.X.10.15` | 445 | `smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%ZooLand2025!"` |
-| RDP | MEERKAT | `10.X.10.12` | 3389 | `xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland /cert:ignore` |
+| SMB Shared | ZEBRA | `10.X.10.15` | 445 | `smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%Welcome123"` |
+| RDP | MEERKAT | `10.X.10.12` | 3389 | `xfreerdp /v:10.X.10.12 /u:jsmith /p:'Welcome123' /d:zooland /cert:ignore` |
 | DNS | GIRAFFE | `10.X.10.7` | 53 | `dig web.zooland.local @10.X.10.7` |
 | LDAP | GIRAFFE | `10.X.10.7` | 389 | `ldapsearch -x -H ldap://10.X.10.7 -b "DC=zooland,DC=local" "(objectClass=user)"` |
 | Kerberos | GIRAFFE | `10.X.10.7` | 88 | `nc -zv 10.X.10.7 88` |
 | SSH — Web | PENGUIN | `10.X.10.23` | 22 | `ssh admin@10.X.10.23` (pw: `admin`) |
 | SSH — DB | HIPPO | `10.X.10.41` | 22 | `ssh admin@10.X.10.41` (pw: `admin`) |
-| SSH — Mail | FLAMINGO | `10.X.10.38` | 22 | `ssh jsmith@10.X.10.38` (pw: `ZooLand2025!`) |
-| SSH — FTP | OTTER | `10.X.10.29` | 22 | `ssh mlopez@10.X.10.29` (pw: `ZooLand2025!`) |
+| SSH — Mail | FLAMINGO | `10.X.10.38` | 22 | `ssh jsmith@10.X.10.38` (pw: `Welcome123`) |
+| SSH — FTP | OTTER | `10.X.10.29` | 22 | `ssh mlopez@10.X.10.29` (pw: `Football1`) |
 | Scoring Dashboard | SCORESVR | `10.X.99.17` | 8080 | `curl http://10.X.99.17:8080/api/status` |

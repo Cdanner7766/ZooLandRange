@@ -49,7 +49,7 @@ Credentials (lab only, intentionally weak)
 Where	Account	Password
 Windows local admin	Administrator	ZooTime!
 Domain admin	ZOOLAND\domainadmin	ZooTime!
-Domain employees (15 documented)	jsmith, bwilson, mchen, mlopez, rthomas, and others	ZooLand2025!
+Domain employees (15 documented)	each has its own basic weak password (README.md table); jsmith/Welcome123, bwilson/Spring2025, mchen/Monkey123, mlopez/Football1, rthomas/Baseball1 are the five scoring-rotation accounts	see left. Only root/Administrator/domainadmin use ZooTime!
 Linux root (PENGUIN, OTTER, FLAMINGO, HIPPO)	root	ZooTime! (SSH root password login is refused by sshd defaults; use localuser + sudo)
 Linux weak users	admin / admin, ftpuser / ftpuser, mail / mail, webadmin / password, dbadmin / password, user / password	see left
 Ludus Linux default	localuser	password (passwordless sudo; debian/debian does not work)

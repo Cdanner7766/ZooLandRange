@@ -66,25 +66,25 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | Local Administrator | `Administrator` | `ZooTime!` |
 | Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 
-**ZooLand Inc. employee accounts** (created by `ludus_ccdc_domain_users` role):
+**ZooLand Inc. employee accounts** (created by `ludus_ccdc_domain_users` role). Each employee has a different basic weak password that appears in common wordlists; the FTP and mail accounts on OTTER and FLAMINGO use the same password as the employee's domain account:
 
 | Display Name | Username | Password | Department |
 |-------------|----------|----------|------------|
-| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(FTP + IMAP + RDP scoring rotation)* |
-| Barbara Wilson | `bwilson` | `ZooLand2025!` | HR *(FTP + IMAP + RDP scoring rotation)* |
-| Michelle Chen | `mchen` | `ZooLand2025!` | Finance *(FTP + IMAP + RDP scoring rotation)* |
-| Maria Lopez | `mlopez` | `ZooLand2025!` | Logistics *(FTP + IMAP + RDP scoring rotation)* |
-| Robert Thomas | `rthomas` | `ZooLand2025!` | Warehouse *(FTP + IMAP + RDP scoring rotation)* |
-| Alex Johnson | `ajohnson` | `ZooLand2025!` | Marketing |
-| Thomas Lee | `tlee` | `ZooLand2025!` | Operations |
-| Sarah Williams | `swilliams` | `ZooLand2025!` | Veterinary |
-| Patricia Garcia | `pgarcia` | `ZooLand2025!` | Animal Care |
-| Kevin Brown | `kbrown` | `ZooLand2025!` | Security |
-| Lisa Martinez | `lmartinez` | `ZooLand2025!` | Facilities |
-| David Jones | `djones` | `ZooLand2025!` | Research |
-| Nicole Anderson | `nanderson` | `ZooLand2025!` | Education |
-| Christopher Wilson | `cwilson` | `ZooLand2025!` | Retail |
-| Emma Miller | `emiller` | `ZooLand2025!` | Administration |
+| John Smith | `jsmith` | `Welcome123` | IT Support *(FTP + IMAP + RDP scoring rotation)* |
+| Barbara Wilson | `bwilson` | `Spring2025` | HR *(FTP + IMAP + RDP scoring rotation)* |
+| Michelle Chen | `mchen` | `Monkey123` | Finance *(FTP + IMAP + RDP scoring rotation)* |
+| Maria Lopez | `mlopez` | `Football1` | Logistics *(FTP + IMAP + RDP scoring rotation)* |
+| Robert Thomas | `rthomas` | `Baseball1` | Warehouse *(FTP + IMAP + RDP scoring rotation)* |
+| Alex Johnson | `ajohnson` | `Sunshine1` | Marketing |
+| Thomas Lee | `tlee` | `Dragon123` | Operations |
+| Sarah Williams | `swilliams` | `Princess1` | Veterinary |
+| Patricia Garcia | `pgarcia` | `Iloveyou1` | Animal Care |
+| Kevin Brown | `kbrown` | `Letmein123` | Security |
+| Lisa Martinez | `lmartinez` | `Soccer123` | Facilities |
+| David Jones | `djones` | `Master123` | Research |
+| Nicole Anderson | `nanderson` | `Shadow123` | Education |
+| Christopher Wilson | `cwilson` | `Winter2025` | Retail |
+| Emma Miller | `emiller` | `Abc12345` | Administration |
 
 > 12 additional hidden accounts with individual passwords also exist in AD (not documented here — for red team discovery).
 
@@ -129,7 +129,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 | Local Administrator | `Administrator` | `ZooTime!` |
 
-> Domain users (e.g. `jsmith / ZooLand2025!`) can also RDP — Domain Users group has Remote Desktop access.
+> Domain users (e.g. `jsmith / Welcome123`) can also RDP — Domain Users group has Remote Desktop access.
 
 **Installed Software:** Firefox, Burp Suite, 7zip, Process Hacker, Wireshark, ILSpy, NetworkMonitor, ExplorerSuite, Croc
 
@@ -268,11 +268,11 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS root | `root` | `ZooTime!` | VULN: weak root |
 | FTP anonymous | `anonymous` | (any password) | VULN: anonymous upload |
 | Ludus default | `localuser` | `password` (passwordless sudo) | |
-| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
-| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
-| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
-| Employee (HR) | `bwilson` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
-| Employee (Finance) | `mchen` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
+| Employee (Logistics) | `mlopez` | `Football1` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Warehouse) | `rthomas` | `Baseball1` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (IT Support) | `jsmith` | `Welcome123` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
+| Employee (HR) | `bwilson` | `Spring2025` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
+| Employee (Finance) | `mchen` | `Monkey123` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
 
 **FTP Directory Structure:**
 
@@ -323,11 +323,11 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS / mail user | `user` | `password` | VULN: weak account |
 | OS root | `root` | `ZooTime!` | VULN: weak root |
 | Ludus default | `localuser` | `password` (passwordless sudo) | |
-| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
-| Employee (HR) | `bwilson` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
-| Employee (Finance) | `mchen` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
-| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
-| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
+| Employee (IT Support) | `jsmith` | `Welcome123` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (HR) | `bwilson` | `Spring2025` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Finance) | `mchen` | `Monkey123` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Logistics) | `mlopez` | `Football1` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
+| Employee (Warehouse) | `rthomas` | `Baseball1` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
 
 **Vulnerabilities:**
 
@@ -484,7 +484,7 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 - Anonymous FTP with full write access
 - Guest SMB access enabled with no authentication
 - Windows admin/domain admin accounts use `ZooTime!` (given to blue team)
-- 15 standard ZooLand Inc. employee accounts use `ZooLand2025!`; 12 hidden accounts have individual weak/mid passwords
+- 15 standard ZooLand Inc. employee accounts each have their own basic, wordlist-style password (e.g. `Welcome123`, `Football1`); only the admin and root accounts use `ZooTime!`; 12 hidden accounts have individual weak/mid passwords
 - CrazyRhino admin: `admin` / `admin123` (unchanged default)
 
 ### Network / Firewall
