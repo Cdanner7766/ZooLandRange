@@ -70,11 +70,11 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Display Name | Username | Password | Department |
 |-------------|----------|----------|------------|
-| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(IMAP + RDP scoring rotation)* |
-| Barbara Wilson | `bwilson` | `ZooLand2025!` | HR *(IMAP + RDP scoring rotation)* |
-| Michelle Chen | `mchen` | `ZooLand2025!` | Finance *(IMAP + RDP scoring rotation)* |
-| Maria Lopez | `mlopez` | `ZooLand2025!` | Logistics *(FTP + RDP scoring rotation)* |
-| Robert Thomas | `rthomas` | `ZooLand2025!` | Warehouse *(FTP + RDP scoring rotation)* |
+| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(FTP + IMAP + RDP scoring rotation)* |
+| Barbara Wilson | `bwilson` | `ZooLand2025!` | HR *(FTP + IMAP + RDP scoring rotation)* |
+| Michelle Chen | `mchen` | `ZooLand2025!` | Finance *(FTP + IMAP + RDP scoring rotation)* |
+| Maria Lopez | `mlopez` | `ZooLand2025!` | Logistics *(FTP + IMAP + RDP scoring rotation)* |
+| Robert Thomas | `rthomas` | `ZooLand2025!` | Warehouse *(FTP + IMAP + RDP scoring rotation)* |
 | Alex Johnson | `ajohnson` | `ZooLand2025!` | Marketing |
 | Thomas Lee | `tlee` | `ZooLand2025!` | Operations |
 | Sarah Williams | `swilliams` | `ZooLand2025!` | Veterinary |
@@ -267,9 +267,12 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS / FTP user | `admin` | `admin` | VULN: weak account |
 | OS root | `root` | `ZooTime!` | VULN: weak root |
 | FTP anonymous | `anonymous` | (any password) | VULN: anonymous upload |
-| Ludus default | `debian` | `debian` | |
-| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP + RDP rotation** |
-| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | **Scoring engine FTP + RDP rotation** |
+| Ludus default | `localuser` | `password` (passwordless sudo) | |
+| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
+| Employee (HR) | `bwilson` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
+| Employee (Finance) | `mchen` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
 
 **FTP Directory Structure:**
 
@@ -319,10 +322,12 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS / mail user | `admin` | `admin` | VULN: weak account |
 | OS / mail user | `user` | `password` | VULN: weak account |
 | OS root | `root` | `ZooTime!` | VULN: weak root |
-| Ludus default | `debian` | `debian` | |
-| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine IMAP + RDP rotation** |
-| Employee (HR) | `bwilson` | `ZooLand2025!` | **Scoring engine IMAP + RDP rotation** |
-| Employee (Finance) | `mchen` | `ZooLand2025!` | **Scoring engine IMAP + RDP rotation** |
+| Ludus default | `localuser` | `password` (passwordless sudo) | |
+| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (HR) | `bwilson` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Finance) | `mchen` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
+| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
 
 **Vulnerabilities:**
 
@@ -363,7 +368,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS root | `root` | `ZooTime!` | Console only (sshd refuses root password login; SSH as `localuser` / `password` and use `sudo -i`) |
 | OS local user | `admin` | `admin` | SSH/console |
 | OS local user | `dbadmin` | `password` | SSH/console |
-| Ludus default | `debian` | `debian` | SSH/console |
+| Ludus default | `localuser` | `password` (passwordless sudo) | SSH/console |
 
 **Databases:**
 
@@ -424,7 +429,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Ludus default | `debian` | `debian` |
+| Ludus default | `localuser` | `password` (passwordless sudo) |
 
 **Proxmox Console Access:**
 
@@ -458,10 +463,10 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 | DNS Resolution (GIRAFFE:53) | 100 |
 | SMTP Open Relay (FLAMINGO:25) | 75 |
 | MySQL Database (HIPPO:3306) | 75 |
-| IMAP Login (FLAMINGO:143) — rotates `jsmith`, `bwilson`, `mchen` | 50 |
+| IMAP Login (FLAMINGO:143) — rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas` | 50 |
 | POP3 Banner (FLAMINGO:110) | 50 |
 | SMB File Server (ZEBRA:445) | 50 |
-| FTP Login (OTTER:21) — rotates `mlopez`, `rthomas` | 50 |
+| FTP Login (OTTER:21) — rotates `mlopez`, `rthomas`, `jsmith`, `bwilson`, `mchen` | 50 |
 | RDP Workstation (MEERKAT:3389) — rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas` | 50 |
 | SSH Banner (PENGUIN:22) | 25 |
 | SSH Banner (HIPPO:22) | 25 |

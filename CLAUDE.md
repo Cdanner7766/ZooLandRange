@@ -116,10 +116,10 @@ Kerberos (GIRAFFE:88)	100
 DNS resolution (GIRAFFE:53)	100
 SMTP open relay (FLAMINGO:25)	75
 MySQL (HIPPO:3306)	75
-IMAP login, rotates jsmith/bwilson/mchen (FLAMINGO:143)	50
+IMAP login, rotates jsmith/bwilson/mchen/mlopez/rthomas (FLAMINGO:143)	50
 POP3 banner (FLAMINGO:110)	50
 SMB (ZEBRA:445)	50
-FTP login, rotates mlopez/rthomas (OTTER:21)	50
+FTP login, rotates mlopez/rthomas/jsmith/bwilson/mchen (OTTER:21)	50
 RDP, rotates jsmith/bwilson/mchen/mlopez/rthomas (MEERKAT:3389)	50
 SSH banner on PENGUIN, HIPPO, FLAMINGO, OTTER (:22)	25 each
 Vulnerabilities that must stay
@@ -161,7 +161,7 @@ Linux SSH: `localuser` / `password` with passwordless sudo (`debian`/`debian` an
 `ludus range status` can show a stale ERROR/DEPLOYING right after a deploy starts; wait before polling.
 `range-config.yaml` `network.always_blocked_networks` must not cover the range's own 10.<N>.0.0/16 (Ludus emits it before the user rules and it breaks VLAN99->VLAN10 and router DNS). It lists 10/8 minus 10.1.0.0/16 and must be regenerated if the range number changes.
 `ludus_ccdc_blueteam_access` needs a Proxmox admin (pveum). It grants PVEVMUser per VM (/vms/<id>); VMs already sit in the Ludus user pool, so they cannot join a second pool. Without Proxmox rights the role probes, skips and prints a WARNING, so non-admin deploys finish clean; an admin must apply the pveum steps (after a rebuild with new VM IDs, redo the ACL grant).
-The scoring engine rotates accounts round-robin per round (FTP 2, IMAP 3, RDP 5); passwords for each are set from the dashboard key button.
+The scoring engine rotates accounts round-robin per round (FTP, IMAP and RDP: 5 accounts each, the same five employees); passwords for each are set from the dashboard key button.
 `python3 tests/check.py --strict` is the definition-of-done check (exit 0 = 900/900 scoring, all vulnerability checks present).
 Gotchas: Flask is not installed on the Ludus host; test the scoring engine in a temporary venv under /tmp. config.py guesses the range ID from the local IP, so running the engine code on the Ludus host picks the wrong network (it needs to run on SCORESVR, or patch the hosts).
 In role PowerShell scripts, put passwords in single quotes: a `$` inside double quotes silently truncated one ("C00p3r$IT9"). `win_powershell` swallows non-terminating errors unless `error_action: stop` is set.

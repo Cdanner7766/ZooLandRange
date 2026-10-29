@@ -244,3 +244,17 @@ Grants `PVEVMUser` on each blue team VM (`/vms/<id>`) instead of using a pool (t
 ### Docs
 HIPPO's open test database is `testuser` / `testuser` (not anonymous). `tests/check.py` added (15 scoring checks + 31 vulnerability checks). `CLAUDE.md`, `README.md`, `SETUP.md`, `ARCHITECTURE.md` and `VULNERABILITIES.md` updated to match.
 
+---
+
+## 2026-10-29
+
+### Change: FTP and IMAP scoring rotations expanded to five accounts
+**Files:** `roles/ludus_ccdc_ftp_server/tasks/main.yml`, `roles/ludus_ccdc_mail_server/tasks/main.yml`, `scoring_engine/config.py` (and the role copy), `tests/check.py`, docs
+
+The FTP (2 accounts) and IMAP (3 accounts) login checks now rotate through the same five employees as RDP: `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`.
+
+- **New OS accounts** (weak shared password `ZooLand2025!`, same as the domain employees): `jsmith`, `bwilson`, `mchen` on OTTER (also removed from `/etc/ftpusers` so they can FTP in), and `mlopez`, `rthomas` on FLAMINGO (with a `Maildir`). No new usernames or passwords were introduced.
+- The account-creation tasks are now loops, no longer `ignore_errors`, and idempotent.
+- `tests/check.py` has a new "Scoring rotation accounts" section: it logs in as every rotation account (15 total) using the engine's own checks. It is reported separately and does not change the 900-point total or the vulnerability count.
+- Updated: `README.md` (account tables, scoring table), `SETUP.md`, `ARCHITECTURE.md`, `DEMO.md`, `CLAUDE.md`. `README.md` also now lists the Ludus default account as `localuser` / `password` (was `debian` / `debian`).
+

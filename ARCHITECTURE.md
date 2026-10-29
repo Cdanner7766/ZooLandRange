@@ -154,7 +154,7 @@ Each role is a self-contained Ansible role that configures one service and inten
 | `ludus_ccdc_web_server` | PENGUIN | Installs Docker; deploys CrazyRhino React+Node.js store; creates vulnerable docker-compose with hardcoded JWT secret; disables UFW |
 | `ludus_ccdc_db_server` | HIPPO | Installs MariaDB; binds to 0.0.0.0; sets weak root password; grants remote root login; creates `ccdc_company` database with employee PII |
 | `ludus_ccdc_file_server` | ZEBRA | Enables SMBv1; creates Public and Shared SMB shares with Everyone Full Control; enables Guest account; disables Windows Firewall |
-| `ludus_ccdc_mail_server` | FLAMINGO | Installs Postfix + Dovecot; configures open SMTP relay; disables TLS; creates employee mail accounts (jsmith, bwilson, mchen) |
+| `ludus_ccdc_mail_server` | FLAMINGO | Installs Postfix + Dovecot; configures open SMTP relay; disables TLS; creates employee mail accounts (jsmith, bwilson, mchen, mlopez, rthomas) |
 | `ludus_ccdc_ftp_server` | OTTER | Installs vsftpd; enables anonymous upload; disables TLS and chroot; creates employee FTP accounts (mlopez, rthomas) |
 | `ludus_ccdc_workstation` | MEERKAT | Installs blue team tools via Chocolatey (Wireshark, Burp Suite, Process Hacker, ILSpy, etc.) |
 | `ludus_ccdc_scoring_engine` | SCORESVR | Deploys Flask scoring engine as systemd service; installs Python venv + dependencies; configures SQLite database |
@@ -193,9 +193,9 @@ The scoring engine is the most important piece of infrastructure for CCDC practi
 | Service | VM | Port | Check Method |
 |---------|-----|------|--------------|
 | HTTP — CrazyRhino store | PENGUIN | 80 | HTTP GET, validates store content in response body |
-| FTP — authenticated login | OTTER | 21 | FTP login, rotating `mlopez` / `rthomas` (`ZooLand2025!`) |
+| FTP — authenticated login | OTTER | 21 | FTP login, rotating `mlopez` / `rthomas` / `jsmith` / `bwilson` / `mchen` (`ZooLand2025!`) |
 | SMTP — mail relay | FLAMINGO | 25 | Banner read + EHLO handshake |
-| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN, rotating `jsmith` / `bwilson` / `mchen` (`ZooLand2025!`) |
+| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN, rotating `jsmith` / `bwilson` / `mchen` / `mlopez` / `rthomas` (`ZooLand2025!`) |
 | POP3 — banner | FLAMINGO | 110 | Reads `+OK` banner |
 | DNS — A record resolution | GIRAFFE | 53 | Resolves `web.zooland.local`, validates expected IP |
 | MySQL — TCP handshake | HIPPO | 3306 | Reads MySQL server greeting banner |

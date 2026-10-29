@@ -29,7 +29,7 @@ HIPPO: root@% / password, local_infile=1, open test DB, PII, no firewall.
 
 ## Fresh-deploy verification (range destroyed and rebuilt)
 - Full `ludus range deploy` from nothing, then one roles-only redeploy. The full deploy exposed one more bug: GIRAFFE `scooper` password `"C00p3r$IT9"` was in a double-quoted PowerShell string, so `$IT9` expanded to empty and the password failed AD complexity (scooper, jharris, mrobinson were not created). Fixed with single quotes (a0e6ea6). Earlier runs missed it because the failure was swallowed.
-- After that: every host `failed=0` except `ludus_ccdc_blueteam_access` (admin-only). `tests/check.py --strict` exit 0, 900/900, 31/31. Scoring engine rotation confirmed live.
+- After that: every host `failed=0` except `ludus_ccdc_blueteam_access` (admin-only). `tests/check.py --strict` exit 0, 900/900, 31/31. Scoring engine rotation confirmed live (later expanded to five accounts for FTP, IMAP and RDP; 15/15 rotation logins verified by check.py).
 - Caveat: this was a full deploy plus a roles-only redeploy, not one single uninterrupted full deploy with the final commits. ZEBRA still shows one rescued WinRM error (failed=0).
 
 ## BLOCKED / needs admin

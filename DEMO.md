@@ -50,7 +50,7 @@ The dashboard shows:
 - Current UP/DOWN status for every service
 - Historical uptime percentage per service
 - Countdown to the next check round
-- A key icon on the IMAP, FTP and RDP services. These login checks **rotate through several accounts, one per round** (IMAP: `jsmith`, `bwilson`, `mchen`; FTP: `mlopez`, `rthomas`; RDP: `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`). The key icon opens a form with one password field per account, so a changed password can be entered for each (blank fields are left as they are)
+- A key icon on the IMAP, FTP and RDP services. These login checks **rotate through several accounts, one per round** (five accounts each: `jsmith`, `bwilson`, `mchen`, `mlopez` and `rthomas`). The key icon opens a form with one password field per account, so a changed password can be entered for each (blank fields are left as they are)
 - The account used in each round is shown in the service's status message, for example `FTP login OK as 'rthomas'`
 
 **From JAGUAR — check the dashboard via curl:**
