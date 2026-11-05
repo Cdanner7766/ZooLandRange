@@ -243,23 +243,11 @@ network:
     - 172.16.0.0/12
     - 192.168.0.0/16
   rules:
-    - name: Only allow corporate to attacker on 443
-      vlan_src: 10
-      vlan_dst: 99
-      protocol: tcp
-      ports: 443
-      action: ACCEPT
-    - name: Only allow corporate to attacker on 80
-      vlan_src: 10
-      vlan_dst: 99
-      protocol: tcp
-      ports: 80
-      action: ACCEPT
-    - name: Only allow corporate to attacker on 8080
-      vlan_src: 10
-      vlan_dst: 99
-      protocol: tcp
-      ports: 8080
+    - name: Deny corporate to all attacker
+      vlan_src: 99
+      vlan_dst: 10
+      protocol: all
+      ports: all
       action: ACCEPT
     - name: Allow attacker to all corporate
       vlan_src: 99
