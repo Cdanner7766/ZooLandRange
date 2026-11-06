@@ -43,7 +43,7 @@ Required templates (must show BUILT: TRUE): win2022-server-x64-template, win11-2
 
 Domain controller GIRAFFE must be healthy before the domain-joined VMs (MEERKAT, ZEBRA) can join. If those fail, check GIRAFFE first.
 
-Firewall rules: VLAN 10 to VLAN 99 allows only TCP 80, 443, 8080. VLAN 99 to VLAN 10 allows everything. All other inter-VLAN traffic is rejected. JAGUAR and SCORESVR (VLAN 99) can therefore reach every corporate VM.
+Firewall rules: VLAN 10 to VLAN 99 is fully rejected, no exceptions -- corporate VMs have no route to the scoring engine or red team box, including the scoring dashboard. VLAN 99 to VLAN 10 allows everything. All other inter-VLAN traffic is rejected. JAGUAR and SCORESVR (VLAN 99) can therefore reach every corporate VM, but not the reverse. This means blue team has no live dashboard access from VLAN 10 during a round; that is intentional, not a bug -- do not add a VLAN 10 -> 99 exception to "fix" it.
 
 Credentials (lab only, intentionally weak)
 Where	Account	Password

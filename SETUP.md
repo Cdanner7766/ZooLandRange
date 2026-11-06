@@ -232,7 +232,7 @@ The `ludus_ccdc_scoring_engine` role deploys to SCORESVR and runs as a systemd s
 | `scoring_engine_dir` | `/opt/scoring_engine` | Installation directory |
 | `scoring_engine_port` | `8080` | Dashboard listen port |
 
-**Dashboard:** `http://10.X.99.17:8080/`
+**Dashboard:** `http://10.X.99.17:8080/` -- reachable only from VLAN 99 (JAGUAR's browser, or directly on SCORESVR). VLAN 10 -> VLAN 99 is a full reject, so blue team has no dashboard access from a corporate machine (see README.md "Firewall Rules").
 
 **Manage the service on SCORESVR:**
 ```bash

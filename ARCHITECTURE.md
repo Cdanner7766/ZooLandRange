@@ -94,13 +94,16 @@ Traffic between VLANs is blocked by default. The following rules apply:
 Default policy between all VLANs:  REJECT
 
 Exceptions:
-  VLAN 10 → VLAN 99   TCP  80, 443, 8080   ACCEPT  (blue team reaches scoring dashboard)
   VLAN 99 → VLAN 10   ALL  ALL             ACCEPT  (red team/scorer reaches all services)
+
+VLAN 10 → VLAN 99 has no exceptions -- it is a full reject, same as the
+default. Corporate VMs have no route to VLAN 99 at all, including the
+scoring dashboard.
 ```
 
 **Why this topology?**
 The VLAN separation mirrors a real CCDC network where the scoring engine and red team machines live outside the corporate network perimeter. The one-way firewall rules mean:
-- Blue team VMs can reach the scoring dashboard (port 8080) to check their score
+- Blue team VMs have no route to VLAN 99, including the scoring dashboard -- blue team gets no live view of their own score from a corporate machine during a round. This is intentional, mirroring a hardened network with no outbound path to monitoring/red infrastructure; it is not something to "fix" by opening a port back up.
 - The scoring engine on SCORESVR can reach all services to perform checks
 - The red team on JAGUAR has full access to all corporate services (simulating an external attacker)
 - Corporate machines cannot reach JAGUAR on arbitrary ports (simulating no egress to the attacker machine)
@@ -210,7 +213,7 @@ The scoring engine is the most important piece of infrastructure for CCDC practi
 
 ### Dashboard
 
-The live scoring dashboard is available at `http://10.X.99.17:8080/` and is accessible from any VLAN 10 machine (the firewall permits port 8080 from VLAN 10 to VLAN 99).
+The live scoring dashboard is available at `http://10.X.99.17:8080/`, but only from VLAN 99 (JAGUAR's browser, or directly on SCORESVR) -- VLAN 10 corporate machines have no route to VLAN 99 at all, so blue team has no live dashboard access during a round. This is intentional (see "Why this topology?" above).
 
 The scoring engine auto-detects the range ID from SCORESVR's own IP address (pattern `10.X.99.Y` → range ID = `X`), so no manual configuration is needed.
 
@@ -286,7 +289,7 @@ Step 4 — Deploy
    (takes 30–90 minutes depending on hardware)
 ```
 
-After deployment, run `scripts/test_range.sh` from JAGUAR to confirm all services are up, then open the scoring dashboard at `http://10.X.99.17:8080/` to begin a timed practice session.
+After deployment, run `scripts/test_range.sh` from JAGUAR to confirm all services are up, then open the scoring dashboard from JAGUAR's browser at `http://10.X.99.17:8080/` to begin a timed practice session -- VLAN 10 corporate machines cannot reach it.
 
 ---
 

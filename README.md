@@ -40,9 +40,15 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Direction | Protocol | Ports | Action |
 |-----------|----------|-------|--------|
-| VLAN 10 -> VLAN 99 | TCP | 80, 443, 8080 only | ACCEPT |
+| VLAN 10 -> VLAN 99 | ALL | ALL | REJECT (no exceptions) |
 | VLAN 99 -> VLAN 10 | ALL | ALL | ACCEPT |
 | All other inter-VLAN | ALL | ALL | REJECT |
+
+Corporate (VLAN 10) machines have no route to VLAN 99 at all, including the
+scoring dashboard on SCORESVR. This is intentional: blue team gets no live
+dashboard access from their own workstations during a round. Dashboard
+access (and dashboard-based password rotation, see below) is only possible
+from VLAN 99 itself (JAGUAR's browser, or directly on SCORESVR).
 
 ---
 
@@ -456,7 +462,7 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 - Login checks (IMAP, FTP, RDP) rotate through several accounts, one per round, so every account is exercised. If blue team changes a password, set the new one on the dashboard: click the key icon on that service and enter a password for each account on the rotation (blank fields are left unchanged). Until it is updated, that account's turn fails.
 - Stores results in `/opt/scoring_engine/scores.db`
 - Auto-detects the range ID from the scoring machine's `10.X.99.Y` IP
-- Live dashboard available at **`http://10.X.99.17:8080/`** from VLAN 10 machines (port 8080 is permitted through the firewall)
+- Live dashboard available at **`http://10.X.99.17:8080/`**, but only from VLAN 99 (JAGUAR's browser, or directly on SCORESVR) -- VLAN 10 corporate machines have no route to it, so blue team has no live dashboard access during a round (see Firewall Rules above)
 
 | Service Check | Points |
 |---------------|-------:|

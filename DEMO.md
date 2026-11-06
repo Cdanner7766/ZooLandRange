@@ -39,9 +39,12 @@ ssh kali@10.X.99.34
 ## 1. Scoring Dashboard
 
 The scoring engine runs on **SCORESVR** and polls all services every 30 seconds.
-The live dashboard is reachable from any corporate (VLAN 10) machine and from JAGUAR.
+The live dashboard is reachable only from VLAN 99 -- JAGUAR's browser, or
+directly on SCORESVR. VLAN 10 -> VLAN 99 is a full reject, so corporate
+machines (including MEERKAT) have no route to it; blue team gets no live
+dashboard view during a round. This is intentional, not a misconfiguration.
 
-**From JAGUAR or MEERKAT — open a browser:**
+**From JAGUAR — open a browser:**
 ```
 http://10.X.99.17:8080/
 ```

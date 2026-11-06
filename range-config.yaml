@@ -255,24 +255,18 @@ network:
     - 172.16.0.0/12
     - 192.168.0.0/16
   rules:
-    - name: Only allow corporate to attacker on 443
+    # Full reject, no port exceptions: corporate (VLAN 10) has no route to
+    # the scoring engine or red team box. Blue team gets no live dashboard
+    # access from their own machines during a round -- intentional; see
+    # README.md "Firewall Rules" and ARCHITECTURE.md "Why this topology?".
+    # (inter_vlan_default: REJECT above already covers this; this rule is
+    # kept explicit for clarity.)
+    - name: Deny corporate to all attacker
       vlan_src: 10
       vlan_dst: 99
-      protocol: tcp
-      ports: 443
-      action: ACCEPT
-    - name: Only allow corporate to attacker on 80
-      vlan_src: 10
-      vlan_dst: 99
-      protocol: tcp
-      ports: 80
-      action: ACCEPT
-    - name: Only allow corporate to attacker on 8080
-      vlan_src: 10
-      vlan_dst: 99
-      protocol: tcp
-      ports: 8080
-      action: ACCEPT
+      protocol: all
+      ports: all
+      action: REJECT
     - name: Allow attacker to all corporate
       vlan_src: 99
       vlan_dst: 10
