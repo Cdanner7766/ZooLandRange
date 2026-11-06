@@ -261,7 +261,7 @@ network:
     # README.md "Firewall Rules" and ARCHITECTURE.md "Why this topology?".
     # (inter_vlan_default: REJECT above already covers this; this rule is
     # kept explicit for clarity.)
-    - name: Deny corporate to all attacker
+    - name: Reject corporate to all attacker
       vlan_src: 10
       vlan_dst: 99
       protocol: all
