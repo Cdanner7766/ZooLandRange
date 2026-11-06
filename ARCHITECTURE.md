@@ -94,13 +94,16 @@ Traffic between VLANs is blocked by default. The following rules apply:
 Default policy between all VLANs:  REJECT
 
 Exceptions:
-  VLAN 10 → VLAN 99   TCP  80, 443, 8080   ACCEPT  (blue team reaches scoring dashboard)
   VLAN 99 → VLAN 10   ALL  ALL             ACCEPT  (red team/scorer reaches all services)
+
+VLAN 10 → VLAN 99 has no exceptions -- it is a full reject, same as the
+default. Corporate VMs have no route to VLAN 99 at all, including the
+scoring dashboard.
 ```
 
 **Why this topology?**
 The VLAN separation mirrors a real CCDC network where the scoring engine and red team machines live outside the corporate network perimeter. The one-way firewall rules mean:
-- Blue team VMs can reach the scoring dashboard (port 8080) to check their score
+- Blue team VMs have no route to VLAN 99, including the scoring dashboard -- blue team gets no live view of their own score from a corporate machine during a round. This is intentional, mirroring a hardened network with no outbound path to monitoring/red infrastructure; it is not something to "fix" by opening a port back up.
 - The scoring engine on SCORESVR can reach all services to perform checks
 - The red team on JAGUAR has full access to all corporate services (simulating an external attacker)
 - Corporate machines cannot reach JAGUAR on arbitrary ports (simulating no egress to the attacker machine)
@@ -150,17 +153,17 @@ Each role is a self-contained Ansible role that configures one service and inten
 
 | Role | Target VM | What it does |
 |------|-----------|--------------|
-| `ludus_ccdc_domain_users` | GIRAFFE | Creates 27 domain accounts (domainadmin + 15 standard employees + 12 hidden accounts with 3 DA); adds DNS A records; configures DNS vulnerabilities (open zone transfer, recursion) |
+| `ludus_ccdc_domain_users` | GIRAFFE | Creates 28 domain accounts (domainadmin + 15 standard employees + 12 hidden accounts with 3 DA); adds DNS A records; configures DNS vulnerabilities (open zone transfer, recursion) |
 | `ludus_ccdc_web_server` | PENGUIN | Installs Docker; deploys CrazyRhino React+Node.js store; creates vulnerable docker-compose with hardcoded JWT secret; disables UFW |
 | `ludus_ccdc_db_server` | HIPPO | Installs MariaDB; binds to 0.0.0.0; sets weak root password; grants remote root login; creates `ccdc_company` database with employee PII |
 | `ludus_ccdc_file_server` | ZEBRA | Enables SMBv1; creates Public and Shared SMB shares with Everyone Full Control; enables Guest account; disables Windows Firewall |
-| `ludus_ccdc_mail_server` | FLAMINGO | Installs Postfix + Dovecot; configures open SMTP relay; disables TLS; creates employee mail accounts (jsmith, bwilson, mchen) |
+| `ludus_ccdc_mail_server` | FLAMINGO | Installs Postfix + Dovecot; configures open SMTP relay; disables TLS; creates employee mail accounts (jsmith, bwilson, mchen, mlopez, rthomas) |
 | `ludus_ccdc_ftp_server` | OTTER | Installs vsftpd; enables anonymous upload; disables TLS and chroot; creates employee FTP accounts (mlopez, rthomas) |
 | `ludus_ccdc_workstation` | MEERKAT | Installs blue team tools via Chocolatey (Wireshark, Burp Suite, Process Hacker, ILSpy, etc.) |
 | `ludus_ccdc_scoring_engine` | SCORESVR | Deploys Flask scoring engine as systemd service; installs Python venv + dependencies; configures SQLite database |
 | `ludus_ccdc_kali_setup` | JAGUAR | Installs targeted CCDC red-team tools via apt from `archive-4.kali.org` (avoids kali-linux-default CDN failures) |
 | `ludus_ubuntu_desktop` | SCORESVR | Installs XFCE4 desktop environment so SCORESVR can display the scoring dashboard via browser |
-| `ludus_ccdc_blueteam_access` | SCORESVR (runs once, delegates to Proxmox host) | Creates `BlueTeam@pve` Proxmox user, `ZooLand-BlueTeam` pool, adds the 7 blue team VMs to the pool, and grants `PVEVMUser` (start/stop/console) on the pool |
+| `ludus_ccdc_blueteam_access` | SCORESVR (runs once, delegates to Proxmox host) | Creates `BlueTeam@pve` Proxmox user, and grants `PVEVMUser` (start/stop/console) on each of the 7 blue team VMs (per-VM ACL; the VMs already sit in the Ludus user pool, so they cannot also join a second pool) |
 
 ### Role File Structure
 
@@ -193,16 +196,16 @@ The scoring engine is the most important piece of infrastructure for CCDC practi
 | Service | VM | Port | Check Method |
 |---------|-----|------|--------------|
 | HTTP — CrazyRhino store | PENGUIN | 80 | HTTP GET, validates store content in response body |
-| FTP — authenticated login | OTTER | 21 | FTP login as `mlopez` / `ZooLand2025!` |
+| FTP — authenticated login | OTTER | 21 | FTP login, rotating `mlopez` / `rthomas` / `jsmith` / `bwilson` / `mchen` (each with its own basic weak password) |
 | SMTP — mail relay | FLAMINGO | 25 | Banner read + EHLO handshake |
-| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN as `jsmith` / `ZooLand2025!` |
+| IMAP — authenticated login | FLAMINGO | 143 | IMAP LOGIN, rotating `jsmith` / `bwilson` / `mchen` / `mlopez` / `rthomas` (each with its own basic weak password) |
 | POP3 — banner | FLAMINGO | 110 | Reads `+OK` banner |
 | DNS — A record resolution | GIRAFFE | 53 | Resolves `web.zooland.local`, validates expected IP |
 | MySQL — TCP handshake | HIPPO | 3306 | Reads MySQL server greeting banner |
 | SMB — negotiate | ZEBRA | 445 | SMB negotiate protocol response |
 | LDAP — anonymous bind | GIRAFFE | 389 | LDAPv3 anonymous bind |
 | Kerberos — TCP connect | GIRAFFE | 88 | TCP connection to KDC |
-| RDP — NLA login | MEERKAT | 3389 | CredSSP/NTLMv2 login as `jsmith` |
+| RDP — NLA login | MEERKAT | 3389 | CredSSP/NTLMv2 login, rotating `jsmith` / `bwilson` / `mchen` / `mlopez` / `rthomas` |
 | SSH — banner | PENGUIN | 22 | SSH banner read |
 | SSH — banner | HIPPO | 22 | SSH banner read |
 | SSH — banner | FLAMINGO | 22 | SSH banner read |
@@ -210,7 +213,7 @@ The scoring engine is the most important piece of infrastructure for CCDC practi
 
 ### Dashboard
 
-The live scoring dashboard is available at `http://10.X.99.17:8080/` and is accessible from any VLAN 10 machine (the firewall permits port 8080 from VLAN 10 to VLAN 99).
+The live scoring dashboard is available at `http://10.X.99.17:8080/`, but only from VLAN 99 (JAGUAR's browser, or directly on SCORESVR) -- VLAN 10 corporate machines have no route to VLAN 99 at all, so blue team has no live dashboard access during a round. This is intentional (see "Why this topology?" above).
 
 The scoring engine auto-detects the range ID from SCORESVR's own IP address (pattern `10.X.99.Y` → range ID = `X`), so no manual configuration is needed.
 
@@ -286,7 +289,7 @@ Step 4 — Deploy
    (takes 30–90 minutes depending on hardware)
 ```
 
-After deployment, run `scripts/test_range.sh` from JAGUAR to confirm all services are up, then open the scoring dashboard at `http://10.X.99.17:8080/` to begin a timed practice session.
+After deployment, run `scripts/test_range.sh` from JAGUAR to confirm all services are up, then open the scoring dashboard from JAGUAR's browser at `http://10.X.99.17:8080/` to begin a timed practice session -- VLAN 10 corporate machines cannot reach it.
 
 ---
 
@@ -314,7 +317,7 @@ ZooLandRange/
 │   ├── ludus_ccdc_scoring_engine/  Flask scoring engine (SCORESVR)
 │   ├── ludus_ccdc_kali_setup/      Kali tool metapackage (JAGUAR)
 │   ├── ludus_ubuntu_desktop/       XFCE desktop (SCORESVR)
-│   └── ludus_ccdc_blueteam_access/ Proxmox BlueTeam user + pool (delegates to Proxmox host)
+│   └── ludus_ccdc_blueteam_access/ Proxmox BlueTeam user + per-VM ACLs (delegates to Proxmox host)
 │
 ├── scoring_engine/            ← Canonical scoring engine Python source
 │   ├── app.py                 Flask web app + REST API

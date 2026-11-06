@@ -39,9 +39,12 @@ ssh kali@10.X.99.34
 ## 1. Scoring Dashboard
 
 The scoring engine runs on **SCORESVR** and polls all services every 30 seconds.
-The live dashboard is reachable from any corporate (VLAN 10) machine and from JAGUAR.
+The live dashboard is reachable only from VLAN 99 -- JAGUAR's browser, or
+directly on SCORESVR. VLAN 10 -> VLAN 99 is a full reject, so corporate
+machines (including MEERKAT) have no route to it; blue team gets no live
+dashboard view during a round. This is intentional, not a misconfiguration.
 
-**From JAGUAR or MEERKAT — open a browser:**
+**From JAGUAR — open a browser:**
 ```
 http://10.X.99.17:8080/
 ```
@@ -50,14 +53,15 @@ The dashboard shows:
 - Current UP/DOWN status for every service
 - Historical uptime percentage per service
 - Countdown to the next check round
-- Credential update fields for services that use login checks
+- A key icon on the IMAP, FTP and RDP services. These login checks **rotate through several accounts, one per round** (five accounts each: `jsmith`, `bwilson`, `mchen`, `mlopez` and `rthomas`). The key icon opens a form with one password field per account, so a changed password can be entered for each (blank fields are left as they are)
+- The account used in each round is shown in the service's status message, for example `FTP login OK as 'rthomas'`
 
 **From JAGUAR — check the dashboard via curl:**
 ```bash
 curl -s http://10.X.99.17:8080/api/status | python3 -m json.tool
 ```
 
-Expected output (abbreviated):
+Expected output (abbreviated; the full response lists all 15 services, and each has a `message` field):
 ```json
 {
     "last_check_time": "2025-04-01 14:32:01",
@@ -65,7 +69,7 @@ Expected output (abbreviated):
     "round_count": 47,
     "services": {
         "http":    { "name": "HTTP Web Store",          "up": true,  "uptime_pct": 100.0 },
-        "ftp":     { "name": "FTP Server",              "up": true,  "uptime_pct": 98.0  },
+        "ftp":     { "name": "FTP Server",              "up": true,  "uptime_pct": 98.0, "message": "FTP login OK as 'mlopez' | 220 ..." },
         "smtp":    { "name": "SMTP (Mail)",             "up": true,  "uptime_pct": 100.0 },
         "dns":     { "name": "DNS Server",              "up": true,  "uptime_pct": 100.0 },
         "mysql":   { "name": "MySQL Database",          "up": true,  "uptime_pct": 100.0 },
@@ -130,6 +134,23 @@ curl -s -X POST http://10.X.10.23:5000/api/auth/register \
   -d '{"username":"testuser","email":"test@zooland.local","password":"testpass1"}' \
   | python3 -m json.tool
 ```
+
+### Find the employee directory (red team recon)
+
+The store has a public "Meet the Team" page — a realistic feature, not a bug — linked from the nav bar and footer:
+```
+http://10.X.10.23/team
+```
+or via the API it calls:
+```bash
+curl -s http://10.X.10.23/api/team | python3 -m json.tool
+```
+
+It lists each of the 15 standard employees' name, department, and work email. The email reveals the
+company's username convention (`jsmith@zooland.local` → AD username `jsmith`) without publishing a
+username list outright — the same OSINT step a red teamer would do against LinkedIn before trying a
+password spray against AD or the other services. From here, a logical next step is guessing simple
+passwords for a few of these usernames against LDAP (GIRAFFE:389) or RDP (MEERKAT:3389).
 
 ---
 
@@ -228,7 +249,7 @@ telnet 10.X.10.38 143
 
 Then type each line (the `a` prefix is the IMAP tag — required):
 ```
-a LOGIN jsmith ZooLand2025!
+a LOGIN jsmith Welcome123
 a SELECT INBOX
 a FETCH 1 BODY[TEXT]
 a LOGOUT
@@ -251,7 +272,7 @@ telnet 10.X.10.38 110
 Then:
 ```
 USER jsmith
-PASS ZooLand2025!
+PASS Welcome123
 LIST
 RETR 1
 QUIT
@@ -271,7 +292,7 @@ python3 - <<'EOF'
 import imaplib, email
 
 M = imaplib.IMAP4("10.X.10.38", 143)
-M.login("jsmith", "ZooLand2025!")
+M.login("jsmith", "Welcome123")
 M.select("INBOX")
 
 status, data = M.search(None, "ALL")
@@ -383,7 +404,7 @@ bye             # disconnect
 ```bash
 ftp 10.X.10.29
 # Name: mlopez
-# Password: ZooLand2025!
+# Password: Football1
 ```
 
 ```
@@ -404,7 +425,7 @@ quit
 
 ```bash
 # Employee login
-lftp -u mlopez,ZooLand2025! 10.X.10.29
+lftp -u mlopez,Football1 10.X.10.29
 ls
 put /etc/hostname uploaded_hostname.txt
 quit
@@ -437,7 +458,7 @@ curl ftp://10.X.10.29/pub/backup_notes.txt
 smbclient -L //10.X.10.15 -N
 
 # List shares with domain user credentials
-smbclient -L //10.X.10.15 -U "zooland.local\\jsmith%ZooLand2025!"
+smbclient -L //10.X.10.15 -U "zooland.local\\jsmith%Welcome123"
 ```
 
 Expected output:
@@ -468,7 +489,7 @@ exit
 
 ```bash
 # As a domain user
-smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%ZooLand2025!"
+smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%Welcome123"
 
 # As the domain admin
 smbclient //10.X.10.15/Shared -U "zooland.local\\domainadmin%ZooTime!"
@@ -519,7 +540,7 @@ prompt should appear. Files in the share will be visible and editable.
 
 ```bash
 # Log in as domain employee jsmith
-xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland /cert:ignore
+xfreerdp /v:10.X.10.12 /u:jsmith /p:'Welcome123' /d:zooland /cert:ignore
 
 # Log in as domain admin
 xfreerdp /v:10.X.10.12 /u:domainadmin /p:ZooTime! /d:zooland /cert:ignore
@@ -528,7 +549,7 @@ xfreerdp /v:10.X.10.12 /u:domainadmin /p:ZooTime! /d:zooland /cert:ignore
 xfreerdp /v:10.X.10.12 /u:Administrator /p:ZooTime! /cert:ignore
 
 # Useful display options
-xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland \
+xfreerdp /v:10.X.10.12 /u:jsmith /p:'Welcome123' /d:zooland \
   /cert:ignore /w:1280 /h:800 /dynamic-resolution
 ```
 
@@ -558,7 +579,7 @@ On any Windows machine in the range (e.g. MEERKAT itself or ZEBRA), press
 mstsc /v:10.X.10.12
 ```
 
-Enter credentials: `zooland\jsmith` / `ZooLand2025!`
+Enter credentials: `zooland\jsmith` / `Welcome123`
 
 ---
 
@@ -665,8 +686,8 @@ description: IT Support
 ```bash
 ldapsearch -x \
   -H ldap://10.X.10.7 \
-  -D "CN=jsmith,CN=Users,DC=zooland,DC=local" \
-  -w 'ZooLand2025!' \
+  -D "jsmith@zooland.local" \
+  -w 'Welcome123' \
   -b "DC=zooland,DC=local" \
   "(objectClass=user)" \
   sAMAccountName mail department
@@ -699,41 +720,46 @@ nmap -p 88 --open 10.X.10.7
 All four Linux servers (PENGUIN, OTTER, FLAMINGO, HIPPO) have SSH running on port 22.
 Each has weak OS accounts created by their respective Ansible roles.
 
+> **Root cannot log in over SSH with a password** (sshd's default `prohibit-password` applies;
+> `root` / `ZooTime!` works on the console only). To administer a server over SSH, log in as
+> the Ludus default account `localuser` / `password`, which has passwordless `sudo`
+> (`sudo -i` for a root shell). The weak accounts below can log in over SSH but have no `sudo`.
+
 ### Connect to each server
 
 ```bash
 # Web server (PENGUIN)
-ssh root@10.X.10.23          # password: ZooTime!
 ssh admin@10.X.10.23         # password: admin
 ssh webadmin@10.X.10.23      # password: password
 
 # FTP server (OTTER)
-ssh root@10.X.10.29          # password: ZooTime!
-ssh mlopez@10.X.10.29        # password: ZooLand2025!
+ssh ftpuser@10.X.10.29       # password: ftpuser
+ssh mlopez@10.X.10.29        # password: Football1
 
 # Mail server (FLAMINGO)
-ssh root@10.X.10.38          # password: ZooTime!
-ssh jsmith@10.X.10.38        # password: ZooLand2025!
+ssh jsmith@10.X.10.38        # password: Welcome123
 
 # Database server (HIPPO)
-ssh root@10.X.10.41          # password: ZooTime!
 ssh admin@10.X.10.41         # password: admin
+ssh dbadmin@10.X.10.41       # password: password
 ```
 
 ### Check what's running on a server after SSH
 
 ```bash
+# (localuser / password has passwordless sudo)
+
 # On PENGUIN — verify Docker containers are up
-ssh root@10.X.10.23 "docker ps"
+ssh localuser@10.X.10.23 "sudo docker ps"
 
 # On OTTER — verify vsftpd is running
-ssh root@10.X.10.29 "systemctl status vsftpd"
+ssh localuser@10.X.10.29 "systemctl status vsftpd"
 
 # On FLAMINGO — verify Postfix and Dovecot are running
-ssh root@10.X.10.38 "systemctl status postfix dovecot"
+ssh localuser@10.X.10.38 "systemctl status postfix dovecot"
 
 # On HIPPO — verify MariaDB is running and listening
-ssh root@10.X.10.41 "systemctl status mariadb && ss -tlnp | grep 3306"
+ssh localuser@10.X.10.41 "systemctl status mariadb && ss -tlnp | grep 3306"
 ```
 
 ### Scan all SSH banners at once (from JAGUAR)
@@ -776,6 +802,14 @@ The script tests:
 - **FTP (OTTER):** Port open, banner read, anonymous file download
 - **Domain Controller (GIRAFFE):** Ports 53/88/389/445
 
+The script can also run straight from the Ludus host, which reaches the corporate network
+directly, by passing the VLAN 10 base: `./scripts/test_range.sh 10.X.10`. It needs `nc`, and
+`mysql` for the database checks (it warns instead of failing when `mysql` is missing).
+
+For a stricter check run `python3 tests/check.py --strict` from the repo (on the Ludus host). It scores
+all 15 scoring checks (900 points), confirms each intentional vulnerability is still present, and exits
+non-zero on any failure or skipped check.
+
 ---
 
 ## Quick Reference — All Services at a Glance
@@ -786,17 +820,17 @@ The script tests:
 | Web API | PENGUIN | `10.X.10.23` | 5000 | `curl http://10.X.10.23:5000/api/health` |
 | FTP | OTTER | `10.X.10.29` | 21 | `ftp 10.X.10.29` (user: `anonymous`) |
 | SMTP | FLAMINGO | `10.X.10.38` | 25 | `swaks --to jsmith@zooland.local --from mlopez@zooland.local --server 10.X.10.38` |
-| IMAP | FLAMINGO | `10.X.10.38` | 143 | `telnet 10.X.10.38 143` then `a LOGIN jsmith ZooLand2025!` |
+| IMAP | FLAMINGO | `10.X.10.38` | 143 | `telnet 10.X.10.38 143` then `a LOGIN jsmith Welcome123` |
 | POP3 | FLAMINGO | `10.X.10.38` | 110 | `telnet 10.X.10.38 110` then `USER jsmith` |
 | MySQL | HIPPO | `10.X.10.41` | 3306 | `mysql -h 10.X.10.41 -u root -ppassword` |
 | SMB Public | ZEBRA | `10.X.10.15` | 445 | `smbclient //10.X.10.15/Public -N` |
-| SMB Shared | ZEBRA | `10.X.10.15` | 445 | `smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%ZooLand2025!"` |
-| RDP | MEERKAT | `10.X.10.12` | 3389 | `xfreerdp /v:10.X.10.12 /u:jsmith /p:'ZooLand2025!' /d:zooland /cert:ignore` |
+| SMB Shared | ZEBRA | `10.X.10.15` | 445 | `smbclient //10.X.10.15/Shared -U "zooland.local\\jsmith%Welcome123"` |
+| RDP | MEERKAT | `10.X.10.12` | 3389 | `xfreerdp /v:10.X.10.12 /u:jsmith /p:'Welcome123' /d:zooland /cert:ignore` |
 | DNS | GIRAFFE | `10.X.10.7` | 53 | `dig web.zooland.local @10.X.10.7` |
 | LDAP | GIRAFFE | `10.X.10.7` | 389 | `ldapsearch -x -H ldap://10.X.10.7 -b "DC=zooland,DC=local" "(objectClass=user)"` |
 | Kerberos | GIRAFFE | `10.X.10.7` | 88 | `nc -zv 10.X.10.7 88` |
-| SSH — Web | PENGUIN | `10.X.10.23` | 22 | `ssh root@10.X.10.23` (pw: `ZooTime!`) |
-| SSH — DB | HIPPO | `10.X.10.41` | 22 | `ssh root@10.X.10.41` (pw: `ZooTime!`) |
-| SSH — Mail | FLAMINGO | `10.X.10.38` | 22 | `ssh root@10.X.10.38` (pw: `ZooTime!`) |
-| SSH — FTP | OTTER | `10.X.10.29` | 22 | `ssh root@10.X.10.29` (pw: `ZooTime!`) |
+| SSH — Web | PENGUIN | `10.X.10.23` | 22 | `ssh admin@10.X.10.23` (pw: `admin`) |
+| SSH — DB | HIPPO | `10.X.10.41` | 22 | `ssh admin@10.X.10.41` (pw: `admin`) |
+| SSH — Mail | FLAMINGO | `10.X.10.38` | 22 | `ssh jsmith@10.X.10.38` (pw: `Welcome123`) |
+| SSH — FTP | OTTER | `10.X.10.29` | 22 | `ssh mlopez@10.X.10.29` (pw: `Football1`) |
 | Scoring Dashboard | SCORESVR | `10.X.99.17` | 8080 | `curl http://10.X.99.17:8080/api/status` |

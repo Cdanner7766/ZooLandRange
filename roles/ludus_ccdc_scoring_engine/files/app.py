@@ -41,21 +41,27 @@ _state = {
     "is_checking": False,
 }
 
+# Rounds run so far; picks which account each credentialed service uses this round.
+_round_no = 0
+
 # ---------------------------------------------------------------------------
 # Background check loop
 # ---------------------------------------------------------------------------
 
 def _run_one_round():
     """Execute checks for every service and persist results."""
+    global _round_no
     results = []
 
     for svc in config.SERVICES:
-        # Merge DB credential overrides over config defaults for credentialed services
+        # Credentialed services rotate round-robin through their accounts; a
+        # dashboard-set password overrides the configured default.
         effective_svc = dict(svc)
         if svc.get("has_credentials"):
-            db_user, db_pass = database.get_credential(svc["id"])
-            effective_svc["_user"] = db_user or svc.get("default_user", "")
-            effective_svc["_pass"] = db_pass or svc.get("default_pass", "")
+            account = svc["users"][_round_no % len(svc["users"])]
+            overrides = database.get_user_passwords(svc["id"])
+            effective_svc["_user"] = account["user"]
+            effective_svc["_pass"] = overrides.get(account["user"], account["pass"])
         try:
             up, message = checks.run_check(effective_svc)
         except Exception as exc:
@@ -76,6 +82,7 @@ def _run_one_round():
         )
 
     database.save_round(results)
+    _round_no += 1
 
     with _lock:
         _state["last_check_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -206,8 +213,8 @@ def api_status():
 
 @app.route("/api/credentials/<svc_id>", methods=["GET", "POST"])
 def api_credentials(svc_id):
-    """GET: return current username for a credentialed service (password never returned).
-       POST: update credentials {username, password}."""
+    """GET: return the rotation accounts for a credentialed service (passwords never returned).
+       POST: set the password for one rotation account {username, password}."""
     svc = next(
         (s for s in config.SERVICES if s["id"] == svc_id and s.get("has_credentials")),
         None,
@@ -215,17 +222,20 @@ def api_credentials(svc_id):
     if not svc:
         return jsonify({"error": "Service not found or does not use credentials"}), 404
 
+    rotation = [u["user"] for u in svc["users"]]
+
     if request.method == "GET":
-        db_user, _ = database.get_credential(svc_id)
-        return jsonify({"username": db_user or svc.get("default_user", "")})
+        return jsonify({"users": rotation})
 
     data = request.get_json(force=True) or {}
     username = (data.get("username") or "").strip()
     password = data.get("password") or ""
     if not username or not password:
         return jsonify({"error": "Both username and password are required"}), 400
-    database.set_credential(svc_id, username, password)
-    log.info("Credentials updated for service '%s' (user=%s)", svc_id, username)
+    if username not in rotation:
+        return jsonify({"error": f"'{username}' is not in this service's rotation"}), 400
+    database.set_user_password(svc_id, username, password)
+    log.info("Password updated for service '%s' (user=%s)", svc_id, username)
     return jsonify({"ok": True})
 
 

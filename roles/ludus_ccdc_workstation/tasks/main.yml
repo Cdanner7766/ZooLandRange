@@ -14,7 +14,7 @@
 - name: "Grant Domain Users RDP access on MEERKAT"
   ansible.windows.win_powershell:
     script: |
-      # jsmith (ZooLand2025!) is the scoring engine RDP account.
+      # The scoring engine rotates its RDP login through jsmith, bwilson, mchen, mlopez, rthomas.
       # Domain Users group covers all employees; local check uses jsmith specifically.
       Add-LocalGroupMember -Group "Remote Desktop Users" -Member "ZOOLAND\Domain Users" -ErrorAction SilentlyContinue
       Write-Output "Domain Users added to Remote Desktop Users"

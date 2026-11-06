@@ -7,7 +7,7 @@ ludus:
   # Manages AD, DNS (domain-integrated), DHCP, Group Policy
   # Credentials: Administrator / ZooTime!
   # Domain employee accounts — 27 total:
-  #   15 standard (all ZooLand2025!): jsmith (IMAP scoring), bwilson, mchen,
+  #   15 standard (each with its own basic weak password): jsmith (IMAP scoring), bwilson, mchen,
   #     mlopez (FTP scoring), rthomas, ajohnson, tlee, swilliams, pgarcia,
   #     kbrown, lmartinez, djones, nanderson, cwilson, emiller
   #   12 hidden (individual passwords, mixed weak/mid, not in BLUETEAM.md):
@@ -38,7 +38,7 @@ ludus:
   # ============================================================
   # MEERKAT - Windows 11 Domain-joined Workstation
   # Used for simulating user activity and lateral movement targets
-  # Credentials: Administrator / ZooTime!, domain accounts use ZooLand2025!
+  # Credentials: Administrator / ZooTime!, employee accounts have individual basic weak passwords (see README)
   # ============================================================
   - vm_name: "{{ range_id }}-MEERKAT"
     hostname: "{{ range_id }}-MEERKAT"
@@ -61,7 +61,7 @@ ludus:
   # Domain-joined to zooland.local
   # Service: SMB on port 445
   # Shares: \\ZEBRA\Public, \\ZEBRA\Shared
-  # Credentials: Administrator / ZooTime!, domain accounts use ZooLand2025!
+  # Credentials: Administrator / ZooTime!, employee accounts have individual basic weak passwords (see README)
   # VULNS:
   #   - Everyone has Full Control on all shares
   #   - No share passwords required
@@ -238,17 +238,35 @@ ludus:
 
 network:
   inter_vlan_default: REJECT
+  # Ludus emits these as REJECT rules ahead of the user rules below, so a plain
+  # 10.0.0.0/8 also blocks this range's own 10.1.0.0/16 (VLAN 99 -> VLAN 10 and
+  # every VM -> router DNS were rejected). These CIDRs cover all of 10.0.0.0/8
+  # EXCEPT 10.1.0.0/16 (range number 1); if the range number changes, regenerate
+  # them to exclude 10.<X>.0.0/16 instead.
   always_blocked_networks:
-    - 10.0.0.0/8
+    - 10.0.0.0/16
+    - 10.2.0.0/15
+    - 10.4.0.0/14
+    - 10.8.0.0/13
+    - 10.16.0.0/12
+    - 10.32.0.0/11
+    - 10.64.0.0/10
+    - 10.128.0.0/9
     - 172.16.0.0/12
     - 192.168.0.0/16
   rules:
-    - name: Deny corporate to all attacker
-      vlan_src: 99
-      vlan_dst: 10
+    # Full reject, no port exceptions: corporate (VLAN 10) has no route to
+    # the scoring engine or red team box. Blue team gets no live dashboard
+    # access from their own machines during a round -- intentional; see
+    # README.md "Firewall Rules" and ARCHITECTURE.md "Why this topology?".
+    # (inter_vlan_default: REJECT above already covers this; this rule is
+    # kept explicit for clarity.)
+    - name: Reject corporate to all attacker
+      vlan_src: 10
+      vlan_dst: 99
       protocol: all
       ports: all
-      action: ACCEPT
+      action: REJECT
     - name: Allow attacker to all corporate
       vlan_src: 99
       vlan_dst: 10

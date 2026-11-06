@@ -97,10 +97,16 @@ def _build_services():
             "port": 21,
             "check_type": "ftp",
             "has_credentials": True,
-            # mlopez is a ZooLand Inc. logistics employee provisioned by the FTP
-            # server role.  Update via the dashboard if blue team changes the password.
-            "default_user": "mlopez",
-            "default_pass": "ZooLand2025!",
+            # Accounts provisioned by the FTP server role.  The engine rotates through
+            # them, one per round.  Update each password via the dashboard if blue
+            # team changes it.
+            "users": [
+                {"user": "mlopez", "pass": "Football1"},
+                {"user": "rthomas", "pass": "Baseball1"},
+                {"user": "jsmith", "pass": "Welcome123"},
+                {"user": "bwilson", "pass": "Spring2025"},
+                {"user": "mchen", "pass": "Monkey123"},
+            ],
         },
         {
             "id": "smtp",
@@ -118,10 +124,14 @@ def _build_services():
             "port": 143,
             "check_type": "imap_login",
             "has_credentials": True,
-            # jsmith is a ZooLand Inc. IT support employee provisioned by the mail
-            # server role.  Update via the dashboard if blue team changes the password.
-            "default_user": "jsmith",
-            "default_pass": "ZooLand2025!",
+            # Accounts provisioned by the mail server role.  Rotated one per round.
+            "users": [
+                {"user": "jsmith", "pass": "Welcome123"},
+                {"user": "bwilson", "pass": "Spring2025"},
+                {"user": "mchen", "pass": "Monkey123"},
+                {"user": "mlopez", "pass": "Football1"},
+                {"user": "rthomas", "pass": "Baseball1"},
+            ],
         },
         {
             "id": "pop3",
@@ -186,10 +196,15 @@ def _build_services():
             "check_type": "rdp_login",
             "rdp_domain": "zooland",
             "has_credentials": True,
-            # jsmith is a ZooLand Inc. domain user. Update via dashboard if
-            # blue team changes the password.
-            "default_user": "jsmith",
-            "default_pass": "ZooLand2025!",
+            # ZooLand domain users (all in Domain Users, which has RDP rights on
+            # MEERKAT).  Rotated one per round.
+            "users": [
+                {"user": "jsmith", "pass": "Welcome123"},
+                {"user": "bwilson", "pass": "Spring2025"},
+                {"user": "mchen", "pass": "Monkey123"},
+                {"user": "mlopez", "pass": "Football1"},
+                {"user": "rthomas", "pass": "Baseball1"},
+            ],
         },
         # ------------------------------------------------------------------
         # SSH — admin access to every Linux server

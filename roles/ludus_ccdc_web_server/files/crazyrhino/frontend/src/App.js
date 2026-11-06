@@ -14,6 +14,7 @@ import Orders from './pages/Orders';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
+import Team from './pages/Team';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -46,6 +47,7 @@ function AppContent() {
           <Route path="/order-confirmation/:orderNumber" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+          <Route path="/team" element={<Team />} />
         </Routes>
       </main>
       <Footer />

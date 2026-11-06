@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: CCDC Range
-  description: Creates a BlueTeam Proxmox user and pool with PVEVMUser access to all blue team VMs
+  description: Creates a BlueTeam Proxmox user with PVEVMUser access to all blue team VMs
   license: MIT
   min_ansible_version: "2.10"
   platforms:

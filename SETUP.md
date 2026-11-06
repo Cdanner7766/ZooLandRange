@@ -115,7 +115,7 @@ sysctl -p /etc/sysctl.d/99-bridge.conf
 /sbin/netfilter-persistent save
 ```
 
-> **Note:** These rules only need to be applied once per Ludus host — they are not range-specific and survive reboots. The `range-config.yaml` also includes `always_blocked_networks` which enforces the same isolation at the Debian router level on every deploy, providing defense in depth.
+> **Note:** These rules only need to be applied once per Ludus host — they are not range-specific and survive reboots. The `range-config.yaml` also includes `always_blocked_networks` which enforces the same isolation at the Debian router level on every deploy, providing defense in depth. The `range-config.yaml` list covers all of `10.0.0.0/8` **except this range's own `10.<N>.0.0/16`** (a plain `10.0.0.0/8` would also reject VLAN 99 -> VLAN 10 traffic and DNS from the router, because Ludus applies it before the user rules). If you change the range number, regenerate that list.
 
 ## Step 5: Deploy the range
 
@@ -172,7 +172,7 @@ ludus range deploy -t user-defined-roles
 | `ludus_ccdc_scoring_engine` | SCORESVR | Ubuntu 22.04 | Flask scoring engine + SQLite + systemd | 8080 |
 | `ludus_ccdc_domain_users` | GIRAFFE | Windows Server 2022 | Creates ZooLand Inc. employee AD accounts + DNS A records + DNS vulns | 53 |
 | `ludus_ccdc_kali_setup` | JAGUAR | Kali Linux | Installs targeted CCDC red-team tools from `archive-4.kali.org` | — |
-| `ludus_ccdc_blueteam_access` | SCORESVR | — | Creates `BlueTeam@pve` Proxmox user, `ZooLand-BlueTeam` pool, grants `PVEVMUser` on pool | — |
+| `ludus_ccdc_blueteam_access` | SCORESVR | — | Creates `BlueTeam@pve` Proxmox user, grants `PVEVMUser` on each of the 7 blue team VMs | — |
 
 ## Updating a Role
 
@@ -232,7 +232,7 @@ The `ludus_ccdc_scoring_engine` role deploys to SCORESVR and runs as a systemd s
 | `scoring_engine_dir` | `/opt/scoring_engine` | Installation directory |
 | `scoring_engine_port` | `8080` | Dashboard listen port |
 
-**Dashboard:** `http://10.X.99.17:8080/`
+**Dashboard:** `http://10.X.99.17:8080/` -- reachable only from VLAN 99 (JAGUAR's browser, or directly on SCORESVR). VLAN 10 -> VLAN 99 is a full reject, so blue team has no dashboard access from a corporate machine (see README.md "Firewall Rules").
 
 **Manage the service on SCORESVR:**
 ```bash
@@ -251,12 +251,18 @@ sudo journalctl -u scoring_engine -f
 | DNS — Resolution | GIRAFFE | .7 | 53 | A record query for `web.zooland.local` | 100 |
 | SMTP — Mail relay | FLAMINGO | .38 | 25 | 220 banner + EHLO 250 validation | 75 |
 | MySQL — Database | HIPPO | .41 | 3306 | MySQL handshake banner | 75 |
-| IMAP — Mail login (`jsmith`) | FLAMINGO | .38 | 143 | IMAP LOGIN command | 50 |
+| IMAP — Mail login (rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`) | FLAMINGO | .38 | 143 | IMAP LOGIN command | 50 |
 | POP3 — Mail | FLAMINGO | .38 | 110 | `+OK` banner | 50 |
 | SMB — File Server | ZEBRA | .15 | 445 | SMBv1/v2 negotiate | 50 |
-| FTP — Login (`mlopez`) | OTTER | .29 | 21 | FTP authenticated login | 50 |
-| RDP — Workstation | MEERKAT | .12 | 3389 | CredSSP/NLA login (NTLMv2) | 50 |
-| **Total max per round** | | | | | **800** |
+| FTP — Login (rotates `mlopez`, `rthomas`, `jsmith`, `bwilson`, `mchen`) | OTTER | .29 | 21 | FTP authenticated login | 50 |
+| RDP — Workstation | MEERKAT | .12 | 3389 | CredSSP/NLA login (NTLMv2; rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`) | 50 |
+| SSH — banner | PENGUIN | .23 | 22 | SSH banner read | 25 |
+| SSH — banner | HIPPO | .41 | 22 | SSH banner read | 25 |
+| SSH — banner | FLAMINGO | .38 | 22 | SSH banner read | 25 |
+| SSH — banner | OTTER | .29 | 22 | SSH banner read | 25 |
+| **Total max per round** | | | | | **900** |
+
+Login checks (IMAP, FTP, RDP) rotate through the accounts listed, one per round. If blue team changes a password, update it on the dashboard (key icon on the service); each rotation account has its own password field.
 
 ## Step 6: Validate the Deployment
 

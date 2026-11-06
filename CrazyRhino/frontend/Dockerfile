@@ -6,7 +6,9 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build
+# No lockfile, so npm resolves an eslint-plugin-jest newer than react-scripts 5
+# supports ("Environment key jest/globals is unknown"); linting is not needed.
+RUN DISABLE_ESLINT_PLUGIN=true npm run build
 
 FROM nginx:alpine
 

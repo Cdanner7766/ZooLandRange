@@ -9,12 +9,28 @@
       Write-Output "Administrator password updated"
 
 # VULN: Enable SMBv1 (legacy, vulnerable to EternalBlue)
-- name: "VULN - Enable SMBv1 protocol"
+# The SMB1 driver (mrxsmb10) only exists after a reboot, and until then
+# Set-SmbServerConfiguration -EnableSMB1Protocol fails, so install, reboot if
+# needed, then switch it on.
+- name: "VULN - Install SMBv1 feature"
   ansible.windows.win_powershell:
     script: |
       # INSECURE: Enabling SMBv1 - vulnerable to MS17-010 (EternalBlue)
       # Secure option (DISABLED): Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
-      Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart -ErrorAction SilentlyContinue
+      Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart -ErrorAction SilentlyContinue | Out-Null
+      $Ansible.Changed = $false
+      $Ansible.Result = [bool](-not (Get-Service mrxsmb10 -ErrorAction SilentlyContinue))
+  register: smb1_feature
+
+- name: "VULN - Reboot to finish installing SMBv1"
+  ansible.windows.win_reboot:
+    reboot_timeout: 900
+  when: smb1_feature.result | bool
+
+- name: "VULN - Enable SMBv1 protocol"
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
       Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force
       # Secure option (DISABLED): Set-SmbServerConfiguration -EnableSMB2Protocol $true
       Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force

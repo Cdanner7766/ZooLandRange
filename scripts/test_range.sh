@@ -411,7 +411,7 @@ done
 header "9. NETWORK RULES (Kali -> VLAN 10 access)"
 # =============================================================================
 info "Kali (VLAN 99) should have full access to VLAN 10 per network rules"
-info "VLAN 10 -> Kali should only work on ports 80, 443, 8080"
+info "VLAN 10 -> Kali is a full reject, no exceptions (blue team has no route to VLAN 99)"
 
 # =============================================================================
 # SUMMARY

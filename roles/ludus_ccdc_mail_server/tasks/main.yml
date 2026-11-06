@@ -1,4 +1,31 @@
 ---
+# The Ludus router's DNS (10.X.10.254) rejects queries from range VMs because
+# the default always_blocked_networks rule covers 10.0.0.0/8, so apt and other
+# downloads hang. Use public resolvers instead (internet traffic is NATed).
+- name: "Use public DNS resolvers (router DNS is unreachable from the range)"
+  ansible.builtin.shell: |
+    set -e
+    # Ludus writes the router as DNS in /etc/network/interfaces and
+    # /etc/systemd/resolved.conf and re-applies it; replace it at the source.
+    if [ -f /etc/network/interfaces ]; then
+      sed -i 's/^\([[:space:]]*dns-nameservers\).*/\1 1.1.1.1 8.8.8.8/' /etc/network/interfaces
+    fi
+    if systemctl is-active --quiet systemd-resolved; then
+      sed -i 's/^DNS=.*/DNS=1.1.1.1 8.8.8.8/' /etc/systemd/resolved.conf
+      mkdir -p /etc/systemd/resolved.conf.d
+      printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' > /etc/systemd/resolved.conf.d/zooland-dns.conf
+      systemctl restart systemd-resolved
+      resolvectl dns "$(ip route show default | awk '{print $5; exit}')" 1.1.1.1 8.8.8.8
+    else
+      grep -q '^supersede domain-name-servers' /etc/dhcp/dhclient.conf 2>/dev/null || \
+        echo 'supersede domain-name-servers 1.1.1.1, 8.8.8.8;' >> /etc/dhcp/dhclient.conf
+      printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
+    fi
+  args:
+    executable: /bin/bash
+  become: true
+  changed_when: true
+
 # tasks file for ludus_ccdc_mail_server
 # Configures Postfix + Dovecot mail server with intentional CCDC vulnerabilities
 
@@ -48,7 +75,10 @@
       mynetworks = 0.0.0.0/0
 
       # VULN: Accept mail from anyone (open relay)
-      smtpd_relay_restrictions = permit
+      # (a bare "permit" makes smtpd exit at startup: Postfix needs a working reject-type
+      # restriction in the list, and ignores one placed after "permit".) Because
+      # mynetworks = 0.0.0.0/0, permit_mynetworks matches every client, so relaying stays open.
+      smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
 
       # VULN: No TLS - all traffic in cleartext
       smtpd_tls_security_level = none
@@ -129,23 +159,20 @@
   become: true
   ignore_errors: true
 
-# Scored employee accounts — jsmith is the IMAP scoring account
+# Scored employee accounts — the scoring engine rotates its IMAP login check
+# through all five, one per round (each with the same basic weak password as its domain account).
 - name: "Create employee mail accounts"
   ansible.builtin.shell: |
-    useradd -m -s /bin/bash jsmith  2>/dev/null || true
-    useradd -m -s /bin/bash bwilson 2>/dev/null || true
-    useradd -m -s /bin/bash mchen   2>/dev/null || true
-    echo 'jsmith:ZooLand2025!'  | chpasswd
-    echo 'bwilson:ZooLand2025!' | chpasswd
-    echo 'mchen:ZooLand2025!'   | chpasswd
-    mkdir -p /home/jsmith/Maildir/{new,cur,tmp}
-    mkdir -p /home/bwilson/Maildir/{new,cur,tmp}
-    mkdir -p /home/mchen/Maildir/{new,cur,tmp}
-    chown -R jsmith:jsmith   /home/jsmith/Maildir
-    chown -R bwilson:bwilson /home/bwilson/Maildir
-    chown -R mchen:mchen     /home/mchen/Maildir
+    for up in jsmith:Welcome123 bwilson:Spring2025 mchen:Monkey123 mlopez:Football1 rthomas:Baseball1; do
+      u=${up%%:*}; p=${up#*:}
+      id "$u" >/dev/null 2>&1 || useradd -m -s /bin/bash "$u"
+      echo "$u:$p" | chpasswd
+      mkdir -p /home/$u/Maildir/{new,cur,tmp}
+      chown -R $u:$u /home/$u/Maildir
+    done
   become: true
-  ignore_errors: true
+  args:
+    executable: /bin/bash
 
 # VULN: Disable firewall
 - name: "VULN - Disable firewall"

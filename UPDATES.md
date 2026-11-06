@@ -215,3 +215,110 @@ Previous SETUP.md only listed prerequisites without build instructions.
 **Files:** `UPDATES.md` (this file)
 
 Established this log to track all changes to the range going forward.
+
+---
+
+## 2026-10-28
+
+Fresh-deploy test pass on a non-admin Ludus user. Everything below is on branch `claude-tuning`; earlier entries that mention a `ZooLand-BlueTeam` pool or a plain `10.0.0.0/8` block are superseded by this entry.
+
+### Fix: `always_blocked_networks` blocked the range's own network
+**Files:** `range-config.yaml`
+`10.0.0.0/8` covered `10.1.0.0/16`, so VLAN 99 -> VLAN 10 traffic and router DNS were rejected (scoring engine saw 0/15). The list now covers 10/8 except the range's own /16.
+
+### Fix: roles
+- `ludus_ccdc_domain_users` (GIRAFFE): `New-ADUser` needed `-Name`, errors were swallowed, and `C00p3r$IT9` lost `$IT9` in a double-quoted string (now single quotes).
+- `ludus_ccdc_file_server` (ZEBRA): reboot so the SMBv1 driver exists before enabling it.
+- `ludus_ccdc_mail_server` (FLAMINGO): `smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination` (docs previously claimed `permit_all` plus a recipient-restrictions setting the role never had; a bare `permit` crashed smtpd); `mynetworks = 0.0.0.0/0` keeps it an open relay.
+- `ludus_ccdc_ftp_server` (OTTER): `/srv/ftp` is root-owned (vsftpd refuses a writable anonymous root); pub/upload/incoming stay 777.
+- `ludus_ccdc_web_server` (PENGUIN): frontend build runs with `DISABLE_ESLINT_PLUGIN=true`.
+- Linux roles set public DNS first (now redundant after the network fix, harmless).
+
+### Change: scoring engine rotates accounts
+**Files:** `scoring_engine/*`, `roles/ludus_ccdc_scoring_engine/files/*`
+IMAP, FTP and RDP checks use one account per round (IMAP 3, FTP 2, RDP 5). The dashboard key button now shows every rotation account with its own password field. RDP check implements NTLM-sealed CredSSP so correct domain logins pass on Server 2022.
+
+### Change: `ludus_ccdc_blueteam_access`
+Grants `PVEVMUser` on each blue team VM (`/vms/<id>`) instead of using a pool (the VMs already belong to the Ludus user pool). Without Proxmox admin rights it prints a warning and skips, so non-admin deploys finish clean.
+
+### Docs
+HIPPO's open test database is `testuser` / `testuser` (not anonymous). `tests/check.py` added (15 scoring checks + 31 vulnerability checks). `CLAUDE.md`, `README.md`, `SETUP.md`, `ARCHITECTURE.md` and `VULNERABILITIES.md` updated to match.
+
+---
+
+## 2026-10-29
+
+### Change: FTP and IMAP scoring rotations expanded to five accounts
+**Files:** `roles/ludus_ccdc_ftp_server/tasks/main.yml`, `roles/ludus_ccdc_mail_server/tasks/main.yml`, `scoring_engine/config.py` (and the role copy), `tests/check.py`, docs
+
+The FTP (2 accounts) and IMAP (3 accounts) login checks now rotate through the same five employees as RDP: `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas`.
+
+- **New OS accounts** (weak shared password `ZooLand2025!`, same as the domain employees): `jsmith`, `bwilson`, `mchen` on OTTER (also removed from `/etc/ftpusers` so they can FTP in), and `mlopez`, `rthomas` on FLAMINGO (with a `Maildir`). No new usernames or passwords were introduced.
+- The account-creation tasks are now loops, no longer `ignore_errors`, and idempotent.
+- `tests/check.py` has a new "Scoring rotation accounts" section: it logs in as every rotation account (15 total) using the engine's own checks. It is reported separately and does not change the 900-point total or the vulnerability count.
+- Updated: `README.md` (account tables, scoring table), `SETUP.md`, `ARCHITECTURE.md`, `DEMO.md`, `CLAUDE.md`. `README.md` also now lists the Ludus default account as `localuser` / `password` (was `debian` / `debian`).
+
+---
+
+## 2026-10-29 (later)
+
+### Change: employee passwords are individual and basic; `ZooTime!` is admin/root only
+**Files:** `roles/ludus_ccdc_domain_users`, `roles/ludus_ccdc_ftp_server`, `roles/ludus_ccdc_mail_server`, `scoring_engine/config.py` (and role copy), `tests/check.py`, `range-config.yaml` comments, docs
+
+The 15 documented domain employees no longer share `ZooLand2025!`. Each has a different, common wordlist-style password (all met the previous AD complexity rule; see the later entry: complexity is now off):
+
+- `jsmith` / `Welcome123`
+- `bwilson` / `Spring2025`
+- `mchen` / `Monkey123`
+- `mlopez` / `Football1`
+- `rthomas` / `Baseball1`
+- `ajohnson` / `Sunshine1`
+- `tlee` / `Dragon123`
+- `swilliams` / `Princess1`
+- `pgarcia` / `Iloveyou1`
+- `kbrown` / `Letmein123`
+- `lmartinez` / `Soccer123`
+- `djones` / `Master123`
+- `nanderson` / `Shadow123`
+- `cwilson` / `Winter2025`
+- `emiller` / `Abc12345`
+
+- `ZooTime!` is now used only by `Administrator`, `domainadmin` and the Linux `root` accounts (this was already the case in the roles; docs now say so). The weak `admin`, `webadmin`, `dbadmin`, `ftpuser`, `mail`, `user` and `dbuser` accounts keep their own passwords.
+- The OS accounts on OTTER (FTP) and FLAMINGO (mail) for the five rotation employees use the same password as the domain account.
+- The domain role used to skip accounts that already existed, so a redeploy would not change their password. It now resets the password for existing employees too.
+- The scoring engine's default password for each rotation account matches; `tests/check.py` still verifies every rotation account logs in.
+- The 12 hidden accounts are unchanged.
+- Windows keeps accepting the *previous* password for NTLM logons (such as the RDP check) for up to 60 minutes after a reset, so on an already-deployed range the old password can still appear to work for that long.
+
+
+---
+
+## 2026-10-29 (policy)
+
+### Change: deliberately weak domain password policy, and three letter-only passwords
+**Files:** `roles/ludus_ccdc_domain_users/tasks/main.yml`, `tests/check.py`, `README.md`, `VULNERABILITIES.md`, `CLAUDE.md`
+
+The red team for this range has limited experience, so the domain is made an easier target. This is a new intentional GIRAFFE vulnerability (#5).
+
+- **Domain password policy** is now set explicitly by the role, before any account is created or reset: minimum length **5**, complexity **off**, account lockout **off** (threshold 0). Previously the range inherited the template default (minimum 7, complexity off, lockout off), which no role pinned. Minimum age (1 day), maximum age (42 days) and history (24) are untouched.
+- **Three employees now use 5-7 lowercase letters only:** `ajohnson` / `sunny`, `tlee` / `dragon`, `kbrown` / `letmein`. They are not scoring-rotation accounts. The other twelve employee passwords are unchanged.
+- `tests/check.py` has a new vulnerability check, "GIRAFFE weak password policy", so the range now has 32 vulnerability checks.
+- Note: after a password reset Windows accepts the old password for NTLM logons for up to 60 minutes, so on an already-deployed range the previous password can still work for that long.
+
+---
+
+## 2026-10-29 (team page)
+
+### New: public "Meet the Team" page on the CrazyRhino store — a discoverable employee directory
+**Files:** `roles/ludus_ccdc_web_server/files/crazyrhino/backend/routes/team.js` (new), `backend/server.js`,
+`frontend/src/pages/Team.js` + `Team.css` (new), `frontend/src/App.js`, `frontend/src/components/Navbar.js`,
+`frontend/src/components/Footer.js`
+
+Added a legitimate-looking staff directory (`GET /api/team`, page at `/team`) linked from the nav bar and
+footer so it's found by ordinary browsing — no special tooling needed. It lists the 15 standard employees'
+name, department and work email (`jsmith@zooland.local`), which reveals the AD username convention
+(first initial + last name) without publishing a username list outright. This gives red team members with
+little experience a realistic, discoverable way to learn real usernames before attempting a password
+guess/spray against AD (LDAP/RDP), rather than being handed the list directly. The 12 hidden AD accounts
+are not listed. This is not a vulnerability — just a feature that doubles as an intentional recon path —
+and is documented as such in README.md, not in the vulnerability tables.

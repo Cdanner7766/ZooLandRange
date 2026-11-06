@@ -40,9 +40,15 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 
 | Direction | Protocol | Ports | Action |
 |-----------|----------|-------|--------|
-| VLAN 10 -> VLAN 99 | TCP | 80, 443, 8080 only | ACCEPT |
+| VLAN 10 -> VLAN 99 | ALL | ALL | REJECT (no exceptions) |
 | VLAN 99 -> VLAN 10 | ALL | ALL | ACCEPT |
 | All other inter-VLAN | ALL | ALL | REJECT |
+
+Corporate (VLAN 10) machines have no route to VLAN 99 at all, including the
+scoring dashboard on SCORESVR. This is intentional: blue team gets no live
+dashboard access from their own workstations during a round. Dashboard
+access (and dashboard-based password rotation, see below) is only possible
+from VLAN 99 itself (JAGUAR's browser, or directly on SCORESVR).
 
 ---
 
@@ -66,25 +72,25 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | Local Administrator | `Administrator` | `ZooTime!` |
 | Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 
-**ZooLand Inc. employee accounts** (created by `ludus_ccdc_domain_users` role):
+**ZooLand Inc. employee accounts** (created by `ludus_ccdc_domain_users` role). Each employee has a different basic weak password that appears in common wordlists; the FTP and mail accounts on OTTER and FLAMINGO use the same password as the employee's domain account:
 
 | Display Name | Username | Password | Department |
 |-------------|----------|----------|------------|
-| John Smith | `jsmith` | `ZooLand2025!` | IT Support *(IMAP scoring + RDP scoring account)* |
-| Barbara Wilson | `bwilson` | `ZooLand2025!` | HR |
-| Michelle Chen | `mchen` | `ZooLand2025!` | Finance |
-| Maria Lopez | `mlopez` | `ZooLand2025!` | Logistics *(FTP scoring account on OTTER)* |
-| Robert Thomas | `rthomas` | `ZooLand2025!` | Warehouse |
-| Alex Johnson | `ajohnson` | `ZooLand2025!` | Marketing |
-| Thomas Lee | `tlee` | `ZooLand2025!` | Operations |
-| Sarah Williams | `swilliams` | `ZooLand2025!` | Veterinary |
-| Patricia Garcia | `pgarcia` | `ZooLand2025!` | Animal Care |
-| Kevin Brown | `kbrown` | `ZooLand2025!` | Security |
-| Lisa Martinez | `lmartinez` | `ZooLand2025!` | Facilities |
-| David Jones | `djones` | `ZooLand2025!` | Research |
-| Nicole Anderson | `nanderson` | `ZooLand2025!` | Education |
-| Christopher Wilson | `cwilson` | `ZooLand2025!` | Retail |
-| Emma Miller | `emiller` | `ZooLand2025!` | Administration |
+| John Smith | `jsmith` | `Welcome123` | IT Support *(FTP + IMAP + RDP scoring rotation)* |
+| Barbara Wilson | `bwilson` | `Spring2025` | HR *(FTP + IMAP + RDP scoring rotation)* |
+| Michelle Chen | `mchen` | `Monkey123` | Finance *(FTP + IMAP + RDP scoring rotation)* |
+| Maria Lopez | `mlopez` | `Football1` | Logistics *(FTP + IMAP + RDP scoring rotation)* |
+| Robert Thomas | `rthomas` | `Baseball1` | Warehouse *(FTP + IMAP + RDP scoring rotation)* |
+| Alex Johnson | `ajohnson` | `sunny` | Marketing |
+| Thomas Lee | `tlee` | `dragon` | Operations |
+| Sarah Williams | `swilliams` | `Princess1` | Veterinary |
+| Patricia Garcia | `pgarcia` | `Iloveyou1` | Animal Care |
+| Kevin Brown | `kbrown` | `letmein` | Security |
+| Lisa Martinez | `lmartinez` | `Soccer123` | Facilities |
+| David Jones | `djones` | `Master123` | Research |
+| Nicole Anderson | `nanderson` | `Shadow123` | Education |
+| Christopher Wilson | `cwilson` | `Winter2025` | Retail |
+| Emma Miller | `emiller` | `Abc12345` | Administration |
 
 > 12 additional hidden accounts with individual passwords also exist in AD (not documented here — for red team discovery).
 
@@ -101,7 +107,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | `ftp.zooland.local` | A | `10.X.10.29` |
 | `zooland.local` | MX | `mail.zooland.local` (priority 10) |
 
-**Vulnerabilities (DNS — applied by `ludus_ccdc_domain_users` role):**
+**Vulnerabilities (DNS and password policy — applied by `ludus_ccdc_domain_users` role):**
 
 | # | Vulnerability | Technical Detail | Config Location |
 |---|---------------|------------------|-----------------|
@@ -109,6 +115,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | 2 | **Recursion enabled globally** | Open recursive resolver — DNS amplification attack vector | `Set-DnsServerRecursion -Enable $true` |
 | 3 | **No DNSSEC** | No DNSSEC validation — DNS cache poisoning possible | DNS server settings |
 | 4 | **DNS logging disabled** | `Set-DnsServerDiagnostics -All $false` — no audit trail for queries | DNS diagnostics |
+| 5 | **Weak domain password policy** | Minimum length 5, complexity off, no account lockout — passwords can be guessed or sprayed without limit; `ajohnson` (`sunny`), `tlee` (`dragon`) and `kbrown` (`letmein`) use 5-7 lowercase letters | `Set-ADDefaultDomainPasswordPolicy` |
 
 ---
 
@@ -129,7 +136,7 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | Domain Admin | `ZOOLAND\domainadmin` | `ZooTime!` |
 | Local Administrator | `Administrator` | `ZooTime!` |
 
-> Domain users (e.g. `jsmith / ZooLand2025!`) can also RDP — Domain Users group has Remote Desktop access.
+> Domain users (e.g. `jsmith / Welcome123`) can also RDP — Domain Users group has Remote Desktop access.
 
 **Installed Software:** Firefox, Burp Suite, 7zip, Process Hacker, Wireshark, ILSpy, NetworkMonitor, ExplorerSuite, Croc
 
@@ -210,6 +217,8 @@ VLAN 99 - Attacker Network (10.X.99.0/24)
 | App admin | `admin` | `admin123` | CrazyRhino admin panel |
 | App demo user | `johndoe` | `password123` | CrazyRhino regular user |
 
+**Meet the Team page (`/team`, `GET /api/team`):** a public staff directory on the storefront, linked from the nav bar and footer — not a vulnerability, just a realistic corporate feature. It lists the 15 standard employees' name, department, and work email. The email local part (`jsmith@zooland.local`) reveals the domain's username convention (first initial + last name) without publishing usernames outright, the same way a red teamer would normally infer it from LinkedIn before a password-spray attempt. The 12 hidden AD accounts are not listed.
+
 **Vulnerabilities:**
 
 | # | Vulnerability | Technical Detail | Config Location |
@@ -267,14 +276,17 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS / FTP user | `admin` | `admin` | VULN: weak account |
 | OS root | `root` | `ZooTime!` | VULN: weak root |
 | FTP anonymous | `anonymous` | (any password) | VULN: anonymous upload |
-| Ludus default | `debian` | `debian` | |
-| Employee (Logistics) | `mlopez` | `ZooLand2025!` | **Scoring engine FTP account** |
-| Employee (Warehouse) | `rthomas` | `ZooLand2025!` | |
+| Ludus default | `localuser` | `password` (passwordless sudo) | |
+| Employee (Logistics) | `mlopez` | `Football1` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Warehouse) | `rthomas` | `Baseball1` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (IT Support) | `jsmith` | `Welcome123` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
+| Employee (HR) | `bwilson` | `Spring2025` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
+| Employee (Finance) | `mchen` | `Monkey123` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the FTP rotation) |
 
 **FTP Directory Structure:**
 
 ```
-/srv/ftp/               (anonymous root, world-writable)
+/srv/ftp/               (anonymous root, root-owned; vsftpd refuses a writable anonymous root)
 ├── pub/
 │   ├── readme.txt      ("Public FTP files - CCDC Practice Range")
 │   └── backup_notes.txt ("Backup credentials - admin:admin, root:ZooTime!, ftpuser:ftpuser")
@@ -290,7 +302,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | 1 | **Anonymous access enabled** | `anonymous_enable=YES` with upload, mkdir, and delete permissions | `/etc/vsftpd.conf` |
 | 2 | **No TLS/SSL** | `ssl_enable=NO` — credentials transmitted in cleartext | `/etc/vsftpd.conf` |
 | 3 | **No chroot** | `chroot_local_user=NO` — users can traverse entire filesystem | `/etc/vsftpd.conf` |
-| 4 | **World-writable FTP root** | `chmod -R 777 /srv/ftp` | Directory permissions |
+| 4 | **World-writable FTP directories** | `chmod -R 777` on `/srv/ftp/pub`, `/srv/ftp/upload`, `/srv/ftp/incoming` (`/srv/ftp` itself stays root-owned so anonymous login works) | Directory permissions |
 | 5 | **umask 000** | `anon_umask=000`, `local_umask=000` — all new files are world-writable | `/etc/vsftpd.conf` |
 | 6 | **FTP bounce enabled** | `pasv_promiscuous=YES`, `port_promiscuous=YES` | `/etc/vsftpd.conf` |
 | 7 | **Version in banner** | `ftpd_banner=Welcome to CCDC Practice FTP Server (vsftpd 3.0.5)` | `/etc/vsftpd.conf` |
@@ -319,16 +331,18 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | OS / mail user | `admin` | `admin` | VULN: weak account |
 | OS / mail user | `user` | `password` | VULN: weak account |
 | OS root | `root` | `ZooTime!` | VULN: weak root |
-| Ludus default | `debian` | `debian` | |
-| Employee (IT Support) | `jsmith` | `ZooLand2025!` | **Scoring engine IMAP account** |
-| Employee (HR) | `bwilson` | `ZooLand2025!` | |
-| Employee (Finance) | `mchen` | `ZooLand2025!` | |
+| Ludus default | `localuser` | `password` (passwordless sudo) | |
+| Employee (IT Support) | `jsmith` | `Welcome123` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (HR) | `bwilson` | `Spring2025` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Finance) | `mchen` | `Monkey123` | **Scoring engine FTP + IMAP + RDP rotation** |
+| Employee (Logistics) | `mlopez` | `Football1` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
+| Employee (Warehouse) | `rthomas` | `Baseball1` | **Scoring engine FTP + IMAP + RDP rotation** (OS account created for the IMAP rotation) |
 
 **Vulnerabilities:**
 
 | # | Vulnerability | Technical Detail | Config Location |
 |---|---------------|------------------|-----------------|
-| 1 | **Open SMTP relay** | `smtpd_relay_restrictions = permit_all`, `smtpd_recipient_restrictions = permit_all` — accepts and relays mail from anyone | `/etc/postfix/main.cf` |
+| 1 | **Open SMTP relay** | `smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination` with `mynetworks = 0.0.0.0/0` — every client counts as trusted, so Postfix accepts and relays mail from anyone | `/etc/postfix/main.cf` |
 | 2 | **No SMTP authentication** | `smtpd_sasl_auth_enable = no` — no auth required to send mail | `/etc/postfix/main.cf` |
 | 3 | **No TLS (Postfix)** | `smtpd_tls_security_level = none` — all SMTP traffic in cleartext | `/etc/postfix/main.cf` |
 | 4 | **mynetworks = 0.0.0.0/0** | Treats the entire internet as a trusted network | `/etc/postfix/main.cf` |
@@ -359,17 +373,18 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | MySQL root (remote) | `root` | `password` | `root@%` (any host) |
 | MySQL admin | `admin` | `admin` | `admin@%` (any host) |
 | MySQL app user | `dbuser` | `dbuser` | `dbuser@%` (any host) |
-| OS root | `root` | `ZooTime!` | SSH/console |
+| MySQL test user | `testuser` | `testuser` | `ALL` on `test.*`, any host (`testuser@%`) |
+| OS root | `root` | `ZooTime!` | Console only (sshd refuses root password login; SSH as `localuser` / `password` and use `sudo -i`) |
 | OS local user | `admin` | `admin` | SSH/console |
 | OS local user | `dbadmin` | `password` | SSH/console |
-| Ludus default | `debian` | `debian` | SSH/console |
+| Ludus default | `localuser` | `password` (passwordless sudo) | SSH/console |
 
 **Databases:**
 
 | Database | Contents |
 |----------|----------|
 | `ccdc_company` | `employees` table with names, emails, SSNs, salaries (PII) |
-| `test` | Empty test database accessible to anonymous users |
+| `test` | Empty test database; `testuser` / `testuser` has `GRANT ALL` from any host |
 
 **Vulnerabilities:**
 
@@ -381,7 +396,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 | 4 | **Weak admin account** | `admin:admin` with `ALL PRIVILEGES` and `GRANT OPTION` | MySQL user grants |
 | 5 | **Weak app user** | `dbuser:dbuser` with `ALL PRIVILEGES` on everything | MySQL user grants |
 | 6 | **LOAD DATA LOCAL enabled** | `local-infile = 1` allows reading server-side files via SQL | `/etc/mysql/mariadb.conf.d/99-insecure.cnf` |
-| 7 | **Test database open** | `test` database with `GRANT ALL` to anonymous users (`''@'%'`) | MySQL user grants |
+| 7 | **Test database open** | `test` database with `GRANT ALL` to `testuser` / `testuser` from any host (`'testuser'@'%'`) | MySQL user grants |
 | 8 | **PII in database** | SSNs and salaries stored in plaintext in `ccdc_company.employees` | `ccdc_company` database |
 | 9 | **Firewall disabled** | iptables flushed, all policies set to ACCEPT | iptables rules |
 | 10 | **Weak OS accounts** | `admin:admin`, `dbadmin:password`, `root:ZooTime!` | `/etc/shadow` |
@@ -423,7 +438,7 @@ curl http://10.X.10.23:5000/api/orders/WKZ-XXXXXX-XXXX \
 
 | Account | Username | Password |
 |---------|----------|----------|
-| Ludus default | `debian` | `debian` |
+| Ludus default | `localuser` | `password` (passwordless sudo) |
 
 **Proxmox Console Access:**
 
@@ -433,11 +448,10 @@ The `ludus_ccdc_blueteam_access` role runs at the end of deployment (assigned to
 |------|-------|
 | Proxmox user | `BlueTeam@pve` |
 | Password | `BlueTeam` |
-| Pool | `ZooLand-BlueTeam` |
-| Pool members | GIRAFFE, MEERKAT, ZEBRA, PENGUIN, OTTER, FLAMINGO, HIPPO |
+| VMs (per-VM ACL) | GIRAFFE, MEERKAT, ZEBRA, PENGUIN, OTTER, FLAMINGO, HIPPO |
 | Permission | `PVEVMUser` — start, stop, reboot, console access; no config or snapshot changes |
 
-Blue team members can log in to the Proxmox web UI at `https://<ludus-host-ip>:8006` with `BlueTeam@pve` / `BlueTeam` and access the console of any VM in the pool.
+Blue team members can log in to the Proxmox web UI at `https://<ludus-host-ip>:8006` with `BlueTeam@pve` / `BlueTeam` and access the console of any of those VMs.
 
 **Scoring Engine:**
 
@@ -445,8 +459,10 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 
 - Polls all **15 services** every **30 seconds**
 - Scores each check pass/fail with point values ranging from 25–100 pts
+- Login checks (IMAP, FTP, RDP) rotate through several accounts, one per round, so every account is exercised. If blue team changes a password, set the new one on the dashboard: click the key icon on that service and enter a password for each account on the rotation (blank fields are left unchanged). Until it is updated, that account's turn fails.
+- Stores results in `/opt/scoring_engine/scores.db`
 - Auto-detects the range ID from the scoring machine's `10.X.99.Y` IP
-- Live dashboard available at **`http://10.X.99.17:8080/`** from VLAN 10 machines (port 8080 is permitted through the firewall)
+- Live dashboard available at **`http://10.X.99.17:8080/`**, but only from VLAN 99 (JAGUAR's browser, or directly on SCORESVR) -- VLAN 10 corporate machines have no route to it, so blue team has no live dashboard access during a round (see Firewall Rules above)
 
 | Service Check | Points |
 |---------------|-------:|
@@ -456,11 +472,11 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 | DNS Resolution (GIRAFFE:53) | 100 |
 | SMTP Open Relay (FLAMINGO:25) | 75 |
 | MySQL Database (HIPPO:3306) | 75 |
-| IMAP Login (FLAMINGO:143) — `jsmith` | 50 |
+| IMAP Login (FLAMINGO:143) — rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas` | 50 |
 | POP3 Banner (FLAMINGO:110) | 50 |
 | SMB File Server (ZEBRA:445) | 50 |
-| FTP Login (OTTER:21) — `mlopez` | 50 |
-| RDP Workstation (MEERKAT:3389) — `jsmith` | 50 |
+| FTP Login (OTTER:21) — rotates `mlopez`, `rthomas`, `jsmith`, `bwilson`, `mchen` | 50 |
+| RDP Workstation (MEERKAT:3389) — rotates `jsmith`, `bwilson`, `mchen`, `mlopez`, `rthomas` | 50 |
 | SSH Banner (PENGUIN:22) | 25 |
 | SSH Banner (HIPPO:22) | 25 |
 | SSH Banner (FLAMINGO:22) | 25 |
@@ -477,7 +493,7 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 - Anonymous FTP with full write access
 - Guest SMB access enabled with no authentication
 - Windows admin/domain admin accounts use `ZooTime!` (given to blue team)
-- 15 standard ZooLand Inc. employee accounts use `ZooLand2025!`; 12 hidden accounts have individual weak/mid passwords
+- 15 standard ZooLand Inc. employee accounts each have their own basic, wordlist-style password (e.g. `Welcome123`, `Football1`); only the admin and root accounts use `ZooTime!`; 12 hidden accounts have individual weak/mid passwords
 - CrazyRhino admin: `admin` / `admin123` (unchanged default)
 
 ### Network / Firewall
@@ -510,7 +526,7 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 - Credentials in plaintext files on FTP and SMB shares
 
 ### Access Control
-- World-writable FTP root (777)
+- World-writable FTP directories (777 on pub, upload, incoming)
 - Everyone Full Control on all SMB shares
 - No chroot on FTP (full filesystem traversal)
 - `LOAD DATA LOCAL` enabled in MySQL
@@ -528,7 +544,7 @@ Deployed by the `ludus_ccdc_scoring_engine` Ansible role. Runs as a Python Flask
 
 | Machine | Vulnerability Count |
 |---------|:-------------------:|
-| GIRAFFE (DC) | 4 |
+| GIRAFFE (DC) | 5 |
 | PENGUIN (Web/CrazyRhino) | 12 |
 | HIPPO (DB) | 10 |
 | ZEBRA (File) | 8 |
